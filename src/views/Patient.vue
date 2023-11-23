@@ -1,15 +1,20 @@
 <template>
-  <div class="container">
+  <div class="container" :class="{ 'dark-mode': darkMode }">
     <h1 class="text-center">Patient List and Hello World</h1>
 
     <!-- Anzeige des Formulars -->
-    <div class="form-container">
-      <CreatePersonForm v-if="showForm" @addPerson="addPerson" />
+    <div v-if="showForm" class="form-container">
+      <CreatePersonForm @addPerson="addPerson" />
     </div>
 
     <!-- Button, um das Formular anzuzeigen oder auszublenden -->
     <button @click="toggleForm" class="btn btn-primary" style="position: fixed; bottom: 20px; right: 20px;">
       {{ showForm ? 'Hide Form' : 'Add Patient' }}
+    </button>
+
+    <!-- Button für Dark Mode Toggle -->
+    <button @click="toggleDarkMode" class="btn btn-secondary" style="position: fixed; bottom: 20px; left: 20px;">
+      {{ darkMode ? 'Light Mode' : 'Dark Mode' }}
     </button>
 
     <!-- Patientenliste -->
@@ -22,6 +27,8 @@
               <strong>Name:</strong> {{ patient.name }}<br>
               <strong>Age:</strong> {{ patient.age }}
             </p>
+            <!-- Hinzugefügtes Löschen-Icon -->
+            <button @click="deletePatient(patient.id)" class="btn btn-danger">Delete</button>
           </div>
         </div>
       </div>
@@ -38,7 +45,8 @@ export default {
   data() {
     return {
       patients: [],
-      showForm: true, // Ändere auf true, um das Formular standardmäßig anzuzeigen
+      showForm: true,
+      darkMode: false,
     };
   },
   methods: {
@@ -52,6 +60,28 @@ export default {
     },
     toggleForm() {
       this.showForm = !this.showForm;
+    },
+    toggleDarkMode() {
+      this.darkMode = !this.darkMode;
+    },
+    async deletePatient(patientId) {
+      try {
+        const myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+
+        const requestOptions = {
+          method: 'DELETE',
+          headers: myHeaders,
+          redirect: 'follow',
+        };
+
+        await fetch(`http://localhost:8080/patient/${patientId}`, requestOptions);
+        
+        // Nach erfolgreichem Löschen die Patientenliste aktualisieren
+        this.getPatients();
+      } catch (error) {
+        console.error(`Error deleting patient with ID ${patientId}:`, error);
+      }
     },
     addPerson(person) {
       // Hier implementiere die Logik zum Hinzufügen eines Patienten
@@ -69,8 +99,6 @@ export default {
 </script>
 
 <style scoped>
-/* Füge hier bei Bedarf benutzerdefinierte CSS-Stile hinzu */
-
 /* Stile für das Formular-Container */
 .form-container {
   position: fixed;
@@ -83,4 +111,21 @@ export default {
   border-radius: 5px;
   z-index: 999; /* Damit es über anderen Inhalten liegt */
 }
+
+/* Stile für Dark Mode */
+.dark-mode {
+  background-color: #333; /* Hintergrundfarbe für Dark Mode */
+  color: white; /* Textfarbe für Dark Mode */
+}
+
+.dark-mode .form-container {
+  background-color: #555; /* Hintergrundfarbe für Formular-Container im Dark Mode */
+  color: white; /* Textfarbe für Formular-Container im Dark Mode */
+}
 </style>
+
+
+ 
+
+
+
