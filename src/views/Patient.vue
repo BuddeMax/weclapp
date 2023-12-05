@@ -29,22 +29,37 @@
             </p>
             <!-- Hinzugefügtes Löschen-Icon -->
             <button @click="deletePatient(patient.id)" class="btn btn-danger">Delete</button>
+            <!-- Hinzugefügter Anzeigen-Button -->
+            <!-- In deiner Patient.vue-Komponente oder wo du den Anzeigen-Button hinzugefügt hast -->
+            <router-link :to="{ name: 'PatientDetails', params: { id: patient.id } }" class="btn btn-primary">Anzeigen</router-link>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Anzeige der ausgewählten Patientendetails -->
+    <div v-if="selectedPatient">
+      <h2>{{ selectedPatient.name }} Details</h2>
+      <p><strong>Age:</strong> {{ selectedPatient.age }}</p>
+      <!-- Weitere Eigenschaften hier hinzufügen -->
+
+      <!-- Hinzugefügtes Löschen-Icon -->
+      <button @click="deletePatient(selectedPatient.id)" class="btn btn-danger">Delete</button>
     </div>
   </div>
 </template>
 
 <script>
 import CreatePersonForm from '@/components/CreatePersonForm';
-import PatientService from '../services/PatientService';
+import PatientService from '../store/PatientService';
 
 export default {
   name: 'PatientsService',
   data() {
     return {
       patients: [],
+      selectedPatientId: null,
+      selectedPatient: null,
       showForm: true,
       darkMode: false,
     };
@@ -88,6 +103,11 @@ export default {
       console.log('Neuer Patient:', person);
       // Füge hier die Logik hinzu, um den Patienten zu erstellen oder zu speichern
     },
+    showPatientDetails(patientId) {
+      // Hier kannst du zusätzliche Informationen zum ausgewählten Patienten laden und anzeigen
+      console.log('Zeige Patientendetails an:', patientId);
+      // Füge hier die Logik hinzu, um weitere Patientendetails zu laden und anzuzeigen
+    },
   },
   created() {
     this.getPatients();
@@ -123,6 +143,7 @@ export default {
   color: white; /* Textfarbe für Formular-Container im Dark Mode */
 }
 </style>
+
 
 
  

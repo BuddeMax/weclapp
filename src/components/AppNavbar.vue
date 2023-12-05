@@ -7,9 +7,9 @@
       </button>
       <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
         <div class="navbar-nav">
-          <router-link class="nav-link" to="/" >Home</router-link>
+          <router-link class="nav-link" to="/">Home</router-link>
           <router-link class="nav-link" to="/about">About</router-link>
-          <router-link class="nav-link" to="/patient" >Patient</router-link>
+          <router-link class="nav-link" to="/patient">Patient</router-link>
         </div>
       </div>
     </div>
@@ -18,7 +18,7 @@
 
 <script>
 export default {
-  name: 'AppNavbar' // Geänderter Komponentenname
+  name: 'AppNavbar'
 }
 </script>
 
