@@ -3,7 +3,7 @@
 
     <div v-if="patient">
       <div class="patient-info">
-        <h2>{{ patient.name }} {{ patient.firstname }}</h2>
+        <h2>{{ patient.name }}, {{ patient.firstname }}</h2>
 
         <div class="row">
           <div class="col-md-4">
@@ -46,7 +46,7 @@
                 <div class="row">
                   <div class="patient-details">
                     <h1>Patientendetails</h1>
-                    <button @click="showForm = !showForm">
+                    <button class="btn" @click="showForm = !showForm">
                       Datei hinzufügen
                     </button>
 
@@ -66,7 +66,7 @@
                           required
                         ></textarea>
                       </label>
-                      <button type="submit">Datei hinzufügen</button>
+                      <button class="btn" >Datei hinzufügen</button>
                     </form>
                     <table class="file-table">
                       <thead>
@@ -85,7 +85,7 @@
                             }}</a>
                           </td>
                           <td>
-                            <button @click="deleteFile(file.id)">
+                            <button  class="btn btn-delete" @click="deleteFile(file.id)">
                               Löschen
                             </button>
                           </td>
@@ -99,7 +99,7 @@
                 <!-- Todos Section -->
                 <div class="patient-details">
                   <h1>Todos</h1>
-                  <button @click="showTodoForm = !showTodoForm">
+                  <button class="btn" @click="showTodoForm = !showTodoForm">
                     Todo hinzufügen
                   </button>
 
@@ -116,7 +116,7 @@
                       Status:
                       <input v-model="newTodo.status" required />
                     </label>
-                    <button type="submit">Todo hinzufügen</button>
+                    <button class="btn">Todo hinzufügen</button>
                   </form>
 
                   <table class="file-table">
@@ -134,7 +134,7 @@
                         <td>{{ todo.prioritaet }}</td>
                         <td>{{ todo.status }}</td>
                         <td>
-                          <button @click="deleteTodo(todo.toDoId)">
+                          <button  class="btn btn-delete" @click="deleteTodo(todo.toDoId)">
                             Löschen
                           </button>
                         </td>
@@ -363,29 +363,16 @@ export default {
 </script>
 
 <style scoped>
-.patient-info {
-  max-width: 100%;
-  margin: 0 auto;
+.container {
   padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  background-color: #f8f8f8;
 }
 
-.info-box {
-  border: 1px solid #ddd;
-  padding: 15px;
-  margin-bottom: 15px;
-  border-radius: 5px;
-}
-.patient-details {
-  width: 80%;
-  margin: 0 auto;
-}
-
-.file-table {
-  width: 100%;
-  border-collapse: collapse;
+/* Stile für Bildschirme mit einer Breite von 1024px oder mehr (typischer Laptop) */
+@media screen and (min-width: 1024px) {
+  .container {
+    width: 80%; /* Containerbreite auf 80% setzen */
+    margin: 0 auto; /* Zentrieren des Containers */
+  }
 }
 
 .file-table th,
@@ -397,5 +384,37 @@ export default {
 
 .file-table th {
   background-color: #f2f2f2;
+}
+.btn {
+  /* Stile kopieren von der .btn Klasse in Patient.vue */
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:hover {
+  background-color: #0056b3;
+}
+
+.btn-delete {
+  /* Stile kopieren von der .btn-delete Klasse in Patient.vue */
+  background-color: #dc3545; /* Beispiel für eine rote Farbe */
+  color: white;
+}
+
+.btn-delete:hover {
+  background-color: #c82333; /* Dunklere rote Farbe beim Überfahren */
+}
+
+/* Stile für Bildschirme mit einer Breite von 1024px oder mehr (typischer Laptop) */
+@media screen and (min-width: 1024px) {
+  .file-table {
+    width: 80%; /* Tabellenbreite auf 80% setzen */
+    margin: 0 auto; /* Zentrieren der Tabelle */
+  }
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <div class="container" :class="{ 'dark-mode': darkMode }">
-    <h1 class="text-center">Patient List and Hello World</h1>
+    <h1 class="text-center">Patient List</h1>
 
     <!-- Anzeige des Formulars -->
     <div v-if="showForm" class="form-container">
@@ -8,13 +8,8 @@
     </div>
 
     <!-- Button, um das Formular anzuzeigen oder auszublenden -->
-    <button @click="toggleForm" class="btn btn-primary" style="position: fixed; bottom: 20px; right: 20px;">
+    <button @click="toggleForm" class="btn btn-primary" style="position: fixed: ;top : 20px; right: 20px;">
       {{ showForm ? 'Hide Form' : 'Add Patient' }}
-    </button>
-
-    <!-- Button für Dark Mode Toggle -->
-    <button @click="toggleDarkMode" class="btn btn-secondary" style="position: fixed; bottom: 20px; left: 20px;">
-      {{ darkMode ? 'Light Mode' : 'Dark Mode' }}
     </button>
 
     <!-- Patientenliste -->
@@ -126,28 +121,48 @@ export default {
 </script>
 
 <style scoped>
-/* Stile für das Formular-Container */
-.form-container {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: white;
+.container {
   padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  z-index: 999; /* Damit es über anderen Inhalten liegt */
 }
 
-/* Stile für Dark Mode */
-.dark-mode {
-  background-color: #333; /* Hintergrundfarbe für Dark Mode */
-  color: white; /* Textfarbe für Dark Mode */
+/* Stile für Bildschirme mit einer Breite von 1024px oder mehr (typischer Laptop) */
+@media screen and (min-width: 1024px) {
+  .container {
+    width: 80%; /* Containerbreite auf 80% setzen */
+    margin: 0 auto; /* Zentrieren des Containers */
+  }
 }
 
-.dark-mode .form-container {
-  background-color: #555; /* Hintergrundfarbe für Formular-Container im Dark Mode */
-  color: white; /* Textfarbe für Formular-Container im Dark Mode */
+.form-container {
+  /* Standard-Stile für das Formular */
+  width: 100%;
+  padding: 20px;
+  background-color: #f8f9fa; /* Hintergrundfarbe des Formulars ändern */
+}
+
+/* Stile für Bildschirme mit einer Breite von 1024px oder mehr (typischer Laptop) */
+@media screen and (min-width: 1024px) {
+  .form-container {
+    width: 50%; /* Formularbreite auf 50% setzen */
+    margin: 0 auto; /* Zentrieren des Formulars */
+  }
+}
+
+.card {
+  /* Standard-Stile für die Karte */
+  width: 100%;
+}
+
+/* Stile für Bildschirme mit einer Breite von 1024px oder mehr (typischer Laptop) */
+@media screen and (min-width: 1024px) {
+  .card {
+    width: 80%; /* Kartenbreite auf 80% setzen */
+    margin: 0 auto; /* Zentrieren der Karte */
+  }
+}
+
+button {
+  margin: 10px; /* Abstand um die Schaltflächen hinzufügen */
 }
 </style>
 
