@@ -93,15 +93,22 @@ export default {
         await fetch(`http://localhost:8080/patient/${patientId}`, requestOptions);
         
         // Nach erfolgreichem Löschen die Patientenliste aktualisieren
-        this.getPatients();
+        await this.getPatients();
       } catch (error) {
         console.error(`Error deleting patient with ID ${patientId}:`, error);
       }
     },
-    addPerson(person) {
-      // Hier implementiere die Logik zum Hinzufügen eines Patienten
-      console.log('Neuer Patient:', person);
-      // Füge hier die Logik hinzu, um den Patienten zu erstellen oder zu speichern
+    async addPerson(person) {
+      try {
+        // Hier implementiere die Logik zum Hinzufügen eines Patienten
+        console.log('Neuer Patient:', person);
+        // Füge hier die Logik hinzu, um den Patienten zu erstellen oder zu speichern
+
+        // Nach erfolgreichem Hinzufügen die Patientenliste aktualisieren
+        await this.getPatients();
+      } catch (error) {
+        console.error('Error adding person:', error);
+      }
     },
     showPatientDetails(patientId) {
       // Hier kannst du zusätzliche Informationen zum ausgewählten Patienten laden und anzeigen
