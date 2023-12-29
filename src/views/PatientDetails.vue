@@ -1,161 +1,115 @@
 <template>
   <div class="container">
+    <div v-if="patient" class="patient-details">
+      <header class="patient-header">
+        <h1>{{ patient.name }}, {{ patient.firstname }}</h1>
+      </header>
 
-    <div v-if="patient">
-      <div class="patient-info">
-        <h2>{{ patient.name }}, {{ patient.firstname }}</h2>
-
-        <div class="row">
-          <div class="col-md-4">
-            <div class="info-box">
-              <strong>Age:</strong>
-              <p>{{ patient.age }}</p>
-            </div>
-          </div>
-
-          <div class="col-md-4">
-            <div class="info-box">
-              <strong>Birth Date:</strong>
-              <p>{{ patient.birthDate }}</p>
-            </div>
-          </div>
-
-          <div class="col-md-4">
-            <div class="info-box">
-              <strong>Gender:</strong>
-              <p>{{ patient.gender }}</p>
-            </div>
-          </div>
-        </div>
-
+      <section class="patient-info">
         <div class="info-box">
-          <strong>Note:</strong>
-          <p>{{ patient.note || "N/A" }}</p>
+          <span>Age: {{ patient.age }}</span>
+          <span>Birth Date: {{ patient.birthDate }}</span>
+          <span>Gender: {{ patient.gender }}</span>
+          <span>Note: {{ patient.note || "N/A" }}</span>
         </div>
+      </section>
 
-        <table class="file-table">
+      <section class="patient-todos">
+        <h2>Patiententodos</h2>
+        <button class="btn" @click="toggleTodoForm">Todo hinzufügen</button>
+        <form v-if="showTodoForm" @submit.prevent="addTodo" class="todo-form">
+          <label>
+            Beschreibung:
+            <input v-model="newTodo.beschreibung" required />
+          </label>
+          <label>
+    Priorität:
+    <select v-model="newTodo.prioritaet" required>
+      <option value="">Bitte wählen</option>
+      <option value="niedrig">Niedrig</option>
+      <option value="mittel">Mittel</option>
+      <option value="hoch">Hoch</option>
+    </select>
+  </label>
+  
+          <button class="btn">Todo hinzufügen</button>
+        </form>
+        <table class="todo-table">
           <thead>
             <tr>
-              <th>Patientendateien</th>
-              <th>Todos</th>
+              <th>Status</th>
+              <th>Beschreibung</th>
+              <th>Priorität</th>
+              <th>Aktionen</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>
-                <div class="row">
-                  <div class="patient-details">
-                    <h1>Patientendetails</h1>
-                    <button class="btn" @click="showForm = !showForm">
-                      Datei hinzufügen
-                    </button>
+            <tr v-for="todo in sortedTodos" :key="todo.toDoId">
+    <td>
+      <input type="checkbox" :checked="todo.status === 'erledigt'" @change="toggleTodoStatus(todo)">
+    </td>
+    <td :class="{ 'todo-done': todo.status === 'erledigt' }">{{ todo.beschreibung }}</td>
+    <td>{{ todo.prioritaet }}</td>
+    <td>
+      <button class="btn btn-delete" @click="deleteTodo(todo.toDoId)">
+        Löschen
+      </button>
+    </td>
+  </tr>
+</tbody>
+        </table>
+      </section>
 
-                    <form v-if="showForm" @submit.prevent="addFile">
-                      <label>
-                        Dateiname:
-                        <input v-model="newFile.fileName" required />
-                      </label>
-                      <label>
-                        Dateipfad:
-                        <input v-model="newFile.filePath" required />
-                      </label>
-                      <label>
-                        Beschreibung:
-                        <textarea
-                          v-model="newFile.description"
-                          required
-                        ></textarea>
-                      </label>
-                      <button class="btn" >Datei hinzufügen</button>
-                    </form>
-                    <table class="file-table">
-                      <thead>
-                        <tr>
-                          <th>Dateiname</th>
-                          <th>Dateipfad</th>
-                          <th>Aktionen</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr v-for="file in files" :key="file.id">
-                          <td>{{ file.fileName }}</td>
-                          <td>
-                            <a :href="file.filePath" target="_blank">{{
-                              file.filePath
-                            }}</a>
-                          </td>
-                          <td>
-                            <button  class="btn btn-delete" @click="deleteFile(file.id)">
-                              Löschen
-                            </button>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+      <section class="patient-files">
+        <h2>Patientenfiles</h2>
+        <button class="btn" @click="toggleFileForm">Datei hinzufügen</button>
+        <form v-if="showForm" @submit.prevent="addFile" class="file-form">
+          <label>
+            Dateiname:
+            <input v-model="newFile.fileName" required />
+          </label>
+          <label>
+            Dateipfad:
+            <input v-model="newFile.filePath" required />
+          </label>
+          <label>
+            Beschreibung:
+            <textarea v-model="newFile.description" required></textarea>
+          </label>
+          <button class="btn">Datei hinzufügen</button>
+        </form>
+        <table class="file-table">
+          <thead>
+            <tr>
+              <th>Dateiname</th>
+              <th>Dateipfad</th>
+              <th>Aktionen</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="file in files" :key="file.id">
+              <td>{{ file.fileName }}</td>
+              <td>
+                <a :href="file.filePath" target="_blank">{{ file.filePath }}</a>
               </td>
               <td>
-                <!-- Todos Section -->
-                <div class="patient-details">
-                  <h1>Todos</h1>
-                  <button class="btn" @click="showTodoForm = !showTodoForm">
-                    Todo hinzufügen
-                  </button>
-
-                  <form v-if="showTodoForm" @submit.prevent="addTodo">
-                    <label>
-                      Beschreibung:
-                      <input v-model="newTodo.beschreibung" required />
-                    </label>
-                    <label>
-                      Priorität:
-                      <input v-model="newTodo.prioritaet" required />
-                    </label>
-                    <label>
-                      Status:
-                      <input v-model="newTodo.status" required />
-                    </label>
-                    <button class="btn">Todo hinzufügen</button>
-                  </form>
-
-                  <table class="file-table">
-                    <thead>
-                      <tr>
-                        <th>Beschreibung</th>
-                        <th>Priorität</th>
-                        <th>Status</th>
-                        <th>Aktionen</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr v-for="todo in todos" :key="todo.toDoId">
-                        <td>{{ todo.beschreibung }}</td>
-                        <td>{{ todo.prioritaet }}</td>
-                        <td>{{ todo.status }}</td>
-                        <td>
-                          <button  class="btn btn-delete" @click="deleteTodo(todo.toDoId)">
-                            Löschen
-                          </button>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+                <button class="btn btn-delete" @click="deleteFile(file.id)">
+                  Löschen
+                </button>
               </td>
             </tr>
           </tbody>
         </table>
-
-        <div class="row"></div>
-      </div>
+      </section>
     </div>
   </div>
 </template>
 
+
 <script>
 import PatientService from "../store/PatientService";
 import axios from "axios";
+import PatientFiles from "../components/PatientFiles.vue"; // Import der Komponente
 
 export default {
   name: "PatientDetails",
@@ -179,6 +133,26 @@ export default {
     };
   },
   methods: {
+    toggleFileForm() {
+    this.showForm = !this.showForm;
+  },
+  toggleTodoForm() {
+    this.showTodoForm = !this.showTodoForm;
+  },
+  toggleTodoStatus(todo) {
+  const newStatus = todo.status === 'erledigt' ? 'offen' : 'erledigt';
+  fetch(`http://localhost:8080/todo/${todo.toDoId}/status/${newStatus}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    redirect: "follow",
+  })
+  .then(() => {
+    this.loadPatientTodos(); // Lädt die Todo-Liste erneut, um die Änderungen anzuzeigen
+  })
+  .catch((error) => {
+    console.error("Error updating todo status:", error);
+  });
+},
     async loadPatientDetails() {
       try {
         const patientId = this.$route.params.id;
@@ -355,6 +329,18 @@ export default {
       };
     },
   },
+  computed: {
+    sortedTodos() {
+      const priorityMap = { 'hoch': 1, 'mittel': 2, 'niedrig': 3 };
+
+      return this.todos.slice().sort((a, b) => {
+        if (a.status === 'erledigt' && b.status === 'erledigt') return 0;
+        if (a.status === 'erledigt') return 1;
+        if (b.status === 'erledigt') return -1;
+        return priorityMap[a.prioritaet] - priorityMap[b.prioritaet];
+      });
+    }
+  },
   created() {
     this.loadPatientDetails();
     this.loadPatientFiles();
@@ -368,26 +354,32 @@ export default {
   padding: 20px;
 }
 
-/* Stile für Bildschirme mit einer Breite von 1024px oder mehr (typischer Laptop) */
-@media screen and (min-width: 1024px) {
-  .container {
-    width: 80%; /* Containerbreite auf 80% setzen */
-    margin: 0 auto; /* Zentrieren des Containers */
-  }
+.patient-header h2 {
+  margin-bottom: 20px;
 }
 
-.file-table th,
-.file-table td {
+.info-box span {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.file-table, .todo-table {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: collapse;
+}
+
+.file-table th, .file-table td, .todo-table th, .todo-table td {
   border: 1px solid #ccc;
   padding: 10px;
   text-align: left;
 }
 
-.file-table th {
+.file-table th, .todo-table th {
   background-color: #f2f2f2;
 }
+
 .btn {
-  /* Stile kopieren von der .btn Klasse in Patient.vue */
   padding: 10px 20px;
   background-color: #007bff;
   color: white;
@@ -402,20 +394,62 @@ export default {
 }
 
 .btn-delete {
-  /* Stile kopieren von der .btn-delete Klasse in Patient.vue */
-  background-color: #dc3545; /* Beispiel für eine rote Farbe */
+  background-color: #dc3545;
   color: white;
 }
 
 .btn-delete:hover {
-  background-color: #c82333; /* Dunklere rote Farbe beim Überfahren */
+  background-color: #c82333;
 }
 
-/* Stile für Bildschirme mit einer Breite von 1024px oder mehr (typischer Laptop) */
+.todo-done {
+  text-decoration: line-through;
+}
+
 @media screen and (min-width: 1024px) {
-  .file-table {
-    width: 80%; /* Tabellenbreite auf 80% setzen */
-    margin: 0 auto; /* Zentrieren der Tabelle */
+  .container {
+    width: 80%;
+    margin: 0 auto;
   }
 }
+
+.todo-form, .file-form {
+  width: 100%;
+  padding: 20px;
+  background-color: #f8f9fa; /* Hintergrundfarbe des Formulars */
+  margin-bottom: 20px;
+}
+
+@media screen and (min-width: 1024px) {
+  .todo-form, .file-form {
+    width: 50%; /* Formularbreite auf 50% setzen */
+    margin: 0 auto; /* Zentrieren des Formulars */
+  }
+}
+
+/* Stile für Buttons */
+.btn {
+  margin: 10px; /* Abstand um die Schaltflächen hinzufügen */
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:hover {
+  background-color: #0056b3;
+}
+
+.btn-delete {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-delete:hover {
+  background-color: #c82333;
+}
 </style>
+
