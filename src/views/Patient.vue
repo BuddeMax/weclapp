@@ -88,6 +88,7 @@ export default {
         await fetch(`http://localhost:8080/patient/${patientId}`, requestOptions);
         
         // Nach erfolgreichem Löschen die Patientenliste aktualisieren
+        //test
         await this.getPatients();
       } catch (error) {
         console.error(`Error deleting patient with ID ${patientId}:`, error);

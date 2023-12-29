@@ -64,6 +64,7 @@
     },
     methods: {
       createPatient() {
+        //test
         // Hier kannst du die Daten verwenden oder an einen Service senden
         console.log('Neuer Patient:', this.newPatient);
         // Füge hier die Logik hinzu, um den Patienten zu erstellen oder zu speichern
