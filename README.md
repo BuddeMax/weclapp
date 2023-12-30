@@ -1,3 +1,5 @@
+[![CI](https://github.com/BuddeMax/vue-frontend/actions/workflows/node.js.yml/badge.svg)](https://github.com/BuddeMax/vue-frontend/actions/workflows/node.js.yml)
+
 # vue-frontend
 
 ## Project setup
