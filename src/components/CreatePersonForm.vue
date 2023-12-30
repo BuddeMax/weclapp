@@ -14,13 +14,7 @@
         <input id="name" v-model="newPatient.name" type="text" class="form-control" required>
       </div>
 
-   
-
-    <!-- Mittlerer Container für Alter, Geschlecht und Geburtsdatum -->
-    <div class="form-row">
-        <label for="age">Alter:</label>
-        <input id="age" v-model="newPatient.age" type="number" class="form-control" required>
-      </div>
+  
 
       <div class="form-row">
         <label for="gender">Geschlecht:</label>
@@ -54,7 +48,6 @@
       return {
         newPatient: {
           name: '',
-          age: '',
           gender: '',
           birthDate: '',
           firstname: '',

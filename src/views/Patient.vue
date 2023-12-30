@@ -126,13 +126,6 @@ export default {
   padding: 20px;
 }
 
-/* Stile für Bildschirme mit einer Breite von 1024px oder mehr (typischer Laptop) */
-@media screen and (min-width: 1024px) {
-  .container {
-    width: 80%; /* Containerbreite auf 80% setzen */
-    margin: 0 auto; /* Zentrieren des Containers */
-  }
-}
 
 .form-container {
   /* Standard-Stile für das Formular */
@@ -141,26 +134,11 @@ export default {
   background-color: #f8f9fa; /* Hintergrundfarbe des Formulars ändern */
 }
 
-/* Stile für Bildschirme mit einer Breite von 1024px oder mehr (typischer Laptop) */
-@media screen and (min-width: 1024px) {
-  .form-container {
-    width: 50%; /* Formularbreite auf 50% setzen */
-    margin: 0 auto; /* Zentrieren des Formulars */
-  }
-}
-
 .card {
   /* Standard-Stile für die Karte */
   width: 100%;
 }
 
-/* Stile für Bildschirme mit einer Breite von 1024px oder mehr (typischer Laptop) */
-@media screen and (min-width: 1024px) {
-  .card {
-    width: 80%; /* Kartenbreite auf 80% setzen */
-    margin: 0 auto; /* Zentrieren der Karte */
-  }
-}
 
 button {
   margin: 10px; /* Abstand um die Schaltflächen hinzufügen */
