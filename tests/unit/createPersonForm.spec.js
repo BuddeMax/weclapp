@@ -22,21 +22,15 @@ describe('CreatePersonForm', () => {
     expect(wrapper.find('#note').exists()).toBe(true);
   });
 
-  // 2. Testen der Validierungslogik für jedes Feld
-  describe('field validation', () => {
-    it('validates name field', async () => {
-      wrapper.setData({ newPatient: { name: '' } });
-      await wrapper.vm.$nextTick();
-      expect(wrapper.find('#name').classes()).toContain('is-invalid');
-    });
+  it('validates form fields on submit', async () => {
+    wrapper.setData({ newPatient: { name: '', firstname: '', gender: '', birthDate: '', note: '' } });
+    await wrapper.vm.$nextTick();
+    wrapper.find('form').trigger('submit.prevent');
+    await wrapper.vm.$nextTick();
 
-    it('validates firstname field', async () => {
-      wrapper.setData({ newPatient: { firstname: '' } });
-      await wrapper.vm.$nextTick();
-      expect(wrapper.find('#firstname').classes()).toContain('is-invalid');
-    });
-
-    // Ähnliche Tests für andere Felder...
+    expect(wrapper.find('#name').classes()).toContain('is-invalid');
+    expect(wrapper.find('#firstname').classes()).toContain('is-invalid');
+    // Weitere Feldüberprüfungen ...
   });
 
   // 3. Testen des Absendeverhaltens des Formulars mit ungültigen Daten
@@ -76,10 +70,8 @@ describe('CreatePersonForm', () => {
     await flushPromises();
 
     expect(fetch).toHaveBeenCalledTimes(1);
-    // Weitere Überprüfungen für den fetch-Aufruf...
   });
 
-  // Weitere Tests können hier hinzugefügt werden...
 });
 
 

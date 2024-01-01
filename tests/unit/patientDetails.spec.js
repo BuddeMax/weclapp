@@ -1,19 +1,25 @@
 import { shallowMount } from '@vue/test-utils';
 import PatientDetails from '@/views/PatientDetails.vue';
 
-
 describe('PatientDetails.vue', () => {
   let wrapper;
 
   beforeEach(() => {
+    // Mocken von Routen-Parametern
+    const $route = {
+      params: { id: '123' }
+    };
+
     wrapper = shallowMount(PatientDetails, {
-      // Mocken von Routen-Parametern oder anderen Abhängigkeiten hier, falls erforderlich
+      mocks: {
+        $route
+      }
     });
   });
 
   it('renders and initializes correctly', () => {
     expect(wrapper.exists()).toBeTruthy();
-    // Weitere Überprüfungen des Anfangszustands
+    // Überprüfen des initialen Zustands
   });
 
   it('toggles the file form', async () => {
