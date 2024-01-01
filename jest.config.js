@@ -1,3 +1,11 @@
 module.exports = {
-  preset: '@vue/cli-plugin-unit-jest'
-}
+  preset: '@vue/cli-plugin-unit-jest',
+  transform: {
+    '^.+\\.js$': 'babel-jest',
+    "^.+\\.vue$": "@vue/vue3-jest",
+    },
+  automock: false,
+  resetMocks: false
+};
+
+

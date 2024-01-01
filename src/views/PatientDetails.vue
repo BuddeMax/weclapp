@@ -17,31 +17,32 @@
       </section>
 
       <section class="patient-todos">
-        <h2>Patiententodos</h2>
-        <button class="btn" @click="toggleTodoForm">Todo hinzufügen</button>
+        <h2>Patient-Todos</h2>
+        <button class="btn" @click="toggleTodoForm">Add Todo</button>
         <form v-if="showTodoForm" @submit.prevent="addTodo" class="todo-form">
           <label>
-            Beschreibung:
+            Description:
             <input v-model="newTodo.beschreibung" required />
           </label>
           <label>
-            Priorität:
+            Priority:
             <select v-model="newTodo.prioritaet" required>
-              <option value="">Bitte wählen</option>
-              <option value="niedrig">Niedrig</option>
-              <option value="mittel">Mittel</option>
-              <option value="hoch">Hoch</option>
+              <option value="">Choose One</option>
+              <option value="niedrig">Low</option>
+              <option value="mittel">Middle</option>
+              <option value="hoch">High</option>
             </select>
           </label>
-          <button type="submit" class="btn">Hinzufügen</button>
+          <button type="submit" class="btn">Add
+          </button>
         </form>
         <table class="todo-table">
           <thead>
             <tr>
               <th>Status</th>
-              <th>Beschreibung</th>
-              <th>Priorität</th>
-              <th>Aktionen</th>
+              <th>Description</th>
+              <th>Priority</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -59,7 +60,7 @@
               <td>{{ todo.prioritaet }}</td>
               <td>
                 <button class="btn btn-delete" @click="deleteTodo(todo.toDoId)">
-                  Löschen
+                  Delete
                 </button>
               </td>
             </tr>
@@ -68,29 +69,29 @@
       </section>
 
       <section class="patient-files">
-        <h2>Patientenfiles</h2>
-        <button class="btn" @click="toggleFileForm">Datei hinzufügen</button>
+        <h2>Patient-Files</h2>
+        <button class="btn" @click="toggleFileForm">Add File </button>
         <form v-if="showForm" @submit.prevent="addFile" class="file-form">
           <label>
-            Dateiname:
+            Filename:
             <input v-model="newFile.fileName" required />
           </label>
           <label>
-            Datei:
+            File:
             <input type="file" v-on:change="handleFileUpload" required />
           </label>
           <label>
-            Beschreibung:
+            Description:
             <input v-model="newFile.description" required />
           </label>
-          <button class="btn">Datei hinzufügen</button>
+          <button class="btn">Add File</button>
         </form>
         <table class="file-table">
           <thead>
             <tr>
-              <th>Dateiname</th>
-              <th>Datei</th>
-              <th>Aktionen</th>
+              <th>Filename</th>
+              <th>File</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -101,7 +102,7 @@
               </td>
               <td>
                 <button class="btn btn-delete" @click="deleteFile(file.id)">
-                  Löschen
+                  Delete
                 </button>
               </td>
             </tr>
@@ -113,9 +114,7 @@
 </template>
 
 <script>
-import PatientService from "../store/PatientService";
-import axios from "axios";
-import PatientFiles from "../components/PatientFiles.vue"; // Import der Komponente
+
 
 export default {
   name: "PatientDetails",
@@ -163,34 +162,52 @@ export default {
     async loadPatientDetails() {
       try {
         const patientId = this.$route.params.id;
-        const response = await PatientService.getPatient(patientId);
-        this.patient = response.data;
+        const response = await this.getPatient(patientId);
+        console.log(response);
+        this.patient = response;
       } catch (error) {
         console.error("Error fetching patient details:", error);
       }
     },
+    async getPatient(patientId) {
+    try {
+      const response = await fetch(`http://localhost:8080/patient/${patientId}`);
+      if (!response.ok) {
+        throw new Error('Netzwerk-Antwort war nicht ok');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Fehler beim Abrufen der Patientendetails:', error);
+    }
+  },
     async loadPatientFiles() {
-      try {
-        const patientId = this.$route.params.id;
-        const response = await axios.get(
-          `http://localhost:8080/patient/${patientId}/files`
-        );
-        this.files = response.data;
-      } catch (error) {
-        console.error("Error fetching patient files:", error);
-      }
-    },
-    async deleteFile(fileId) {
-      try {
-        const patientId = this.$route.params.id;
-        await axios.delete(
-          `http://localhost:8080/file/${fileId}/patient/${patientId}`
-        );
-        this.loadPatientFiles();
-      } catch (error) {
-        console.error("Error deleting file:", error);
-      }
-    },
+  try {
+    const patientId = this.$route.params.id;
+    const response = await fetch(`http://localhost:8080/patient/${patientId}/files`);
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    this.files = await response.json();
+  } catch (error) {
+    console.error("Error fetching patient files:", error);
+  }
+},
+async deleteFile(fileId) {
+  try {
+    const patientId = this.$route.params.id;
+    const response = await fetch(`http://localhost:8080/file/${fileId}/patient/${patientId}`, {
+      method: 'DELETE'
+    });
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    this.loadPatientFiles();
+  } catch (error) {
+    console.error("Error deleting file:", error);
+  }
+},
 
     addFile() {
       setTimeout(() => {
@@ -222,49 +239,47 @@ export default {
       }, 60000);
     },
     handleFileUpload(event) {
-      let uploadedFile = event.target.files[0];
+  let uploadedFile = event.target.files[0];
 
-      let reader = new FileReader();
-      reader.onload = () => {
-        let base64File = reader.result.split(",")[1];
+  let reader = new FileReader();
+  reader.onload = () => {
+    let base64File = reader.result.split(",")[1];
 
-        let data = {
-          Parameters: [
-            {
-              Name: "File",
-              FileValue: {
-                Name: uploadedFile.name,
-                Data: base64File,
-              },
-            },
-            {
-              Name: "StoreFile",
-              Value: true,
-            },
-          ],
-        };
+    let data = {
+      Parameters: [
+        {
+          Name: "File",
+          FileValue: {
+            Name: uploadedFile.name,
+            Data: base64File,
+          },
+        },
+        {
+          Name: "StoreFile",
+          Value: true,
+        },
+      ],
+    };
 
-        axios
-          .post(
-            "https://v2.convertapi.com/convert/pdf/to/html?Secret=grRqdvviof9pLfcD",
-            data,
-            {
-              headers: {
-                "Content-Type": "application/json",
-              },
-            }
-          )
-          .then((response) => {
-            console.log(response);
-            this.apiFilePath = response.data.Files[0].Url; // Speichern Sie die URL als filePath
-            console.log(this.apiFilePath);
-          })
-          .catch((error) => {
-            console.log(error);
-          });
-      };
-      reader.readAsDataURL(uploadedFile);
-    },
+    fetch("https://v2.convertapi.com/convert/pdf/to/html?Secret=grRqdvviof9pLfcD", {
+      method: 'POST',
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log(data);
+      this.apiFilePath = data.Files[0].Url; // Speichern Sie die URL als filePath
+      console.log(this.apiFilePath);
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+  };
+  reader.readAsDataURL(uploadedFile);
+},
 
     assignFileToPatient(fileId) {
       if (!this.patient || !this.patient.id) {

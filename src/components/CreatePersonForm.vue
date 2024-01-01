@@ -2,43 +2,37 @@
   <form @submit.prevent="createPatient" class="p-3">
     
     <!-- Oberer Container für Name und Vorname -->
-
-    
-      <div class="form-row">
-        <label for="firstname">Vorname:</label>
-        <input id="firstname" v-model="newPatient.firstname" type="text" class="form-control" required>
-      </div>
-
-      <div class="form-row">
-        <label for="name">Name:</label>
-        <input id="name" v-model="newPatient.name" type="text" class="form-control" required>
-      </div>
-
-  
-
-      <div class="form-row">
-        <label for="gender">Geschlecht:</label>
-        <select id="gender" v-model="newPatient.gender" class="form-control" required>
-          <option value="">Bitte auswählen</option>
-          <option value="male">Männlich</option>
-          <option value="female">Weiblich</option>
-          <option value="other">Andere</option>
-        </select>
-      </div>
-
-      <div class="form-row">
-        <label for="birthDate">Geburtsdatum:</label>
-        <input id="birthDate" v-model="newPatient.birthDate" type="date" class="form-control" required>
-      </div>
-
-
-    <!-- Unterer Container für Notizen -->
     <div class="form-row">
-      <label for="note">Notiz:</label>
-      <textarea id="note" v-model="newPatient.note" class="form-control" required rows="4"></textarea>
+      <label for="firstname">Firstname:</label>
+      <input :class="{'is-valid': newPatient.firstname, 'is-invalid': !newPatient.firstname && submitted}" id="firstname" v-model="newPatient.firstname" type="text" class="form-control" required>
     </div>
 
-    <button type="submit" class="btn btn-primary">Patient hinzufügen</button>
+    <div class="form-row">
+      <label for="name">Surname:</label>
+      <input :class="{'is-valid': newPatient.name, 'is-invalid': !newPatient.name && submitted}" id="name" v-model="newPatient.name" type="text" class="form-control" required>
+    </div>
+
+    <div class="form-row">
+      <label for="gender">Gender:</label>
+      <select :class="{'is-valid': newPatient.gender, 'is-invalid': !newPatient.gender && submitted}" id="gender" v-model="newPatient.gender" class="form-control" required>
+        <option value="">Choose one</option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+
+    <div class="form-row">
+      <label for="birthDate">Birthdate:</label>
+      <input :class="{'is-valid': newPatient.birthDate, 'is-invalid': !newPatient.birthDate && submitted}" id="birthDate" v-model="newPatient.birthDate" type="date" class="form-control" required>
+    </div>
+
+    <div class="form-row">
+      <label for="note">Note:</label>
+      <textarea :class="{'is-valid': newPatient.note, 'is-invalid': !newPatient.note && submitted}" id="note" v-model="newPatient.note" class="form-control" required rows="4"></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Add Patient</button>
   </form>
 </template>
   
@@ -53,11 +47,13 @@
           firstname: '',
           note:''
         },
+        submitted: false
       };
     },
     methods: {
       createPatient() {
-        //test
+        this.submitted = true;
+        if(this.isValidForm()) {
         // Hier kannst du die Daten verwenden oder an einen Service senden
         console.log('Neuer Patient:', this.newPatient);
         // Füge hier die Logik hinzu, um den Patienten zu erstellen oder zu speichern
@@ -84,7 +80,24 @@
         .then(response => response.text())
         .then(result => console.log(result))
         .catch(error => console.log('error', error));
-        },
+        }
+        
+      },
+      getPatients() {
+      fetch("http://localhost:8080/patients")
+        .then(response => response.json())
+        .then(patientsData => {
+          console.log("Aktualisierte Patientenliste:", patientsData);
+          // Hier können Sie die aktualisierte Patientenliste verarbeiten
+          // z.B. in einem Datenzustand speichern oder eine Ansicht aktualisieren
+        })
+        .catch(error => {
+          console.error('Fehler beim Abrufen der Patientenliste:', error);
+        });
+    },
+      isValidForm() {
+      return this.newPatient.name && this.newPatient.gender && this.newPatient.birthDate && this.newPatient.firstname && this.newPatient.note;
+    }
     },
   }
   </script>
@@ -96,12 +109,12 @@
     padding: 20px;
   }
   
-  /* Stile für Bildschirme mit einer Breite von 1024px oder mehr (typischer Laptop) */
-  @media screen and (min-width: 1024px) {
-    .form-container {
-      width: 50%; /* Formularbreite auf 50% setzen */
-      margin: 0 auto; /* Zentrieren des Formulars */
-    }
+  .is-valid {
+    border-color: green;
+  }
+
+  .is-invalid {
+    border-color: red;
   }
   </style>
   

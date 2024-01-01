@@ -1,6 +1,6 @@
 <template>
   <div class="container" :class="{ 'dark-mode': darkMode }">
-    <h1 class="text-center">Patient List</h1>
+    <h1 class="text-center">Patient-List</h1>
 
     <!-- Anzeige des Formulars -->
     <div v-if="showForm" class="form-container">
@@ -26,7 +26,7 @@
             <button @click="deletePatient(patient.id)" class="btn btn-danger">Delete</button>
             <!-- Hinzugefügter Anzeigen-Button -->
             <!-- In deiner Patient.vue-Komponente oder wo du den Anzeigen-Button hinzugefügt hast -->
-            <router-link :to="{ name: 'PatientDetails', params: { id: patient.id } }" class="btn btn-primary">Anzeigen</router-link>
+            <router-link :to="{ name: 'PatientDetails', params: { id: patient.id } }" class="btn btn-primary">Show</router-link>
           </div>
         </div>
       </div>
