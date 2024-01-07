@@ -147,7 +147,7 @@ export default {
     },
     toggleTodoStatus(todo) {
       const newStatus = todo.status === "erledigt" ? "offen" : "erledigt";
-      fetch(`http://localhost:8080/todo/${todo.toDoId}/status/${newStatus}`, {
+      fetch(`https://webtechprojekt.onrender.com/todo/${todo.toDoId}/status/${newStatus}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         redirect: "follow",
@@ -171,7 +171,7 @@ export default {
     },
     async getPatient(patientId) {
     try {
-      const response = await fetch(`http://localhost:8080/patient/${patientId}`);
+      const response = await fetch(`https://webtechprojekt.onrender.com/patient/${patientId}`);
       if (!response.ok) {
         throw new Error('Netzwerk-Antwort war nicht ok');
       }
@@ -183,7 +183,7 @@ export default {
     async loadPatientFiles() {
   try {
     const patientId = this.$route.params.id;
-    const response = await fetch(`http://localhost:8080/patient/${patientId}/files`);
+    const response = await fetch(`https://webtechprojekt.onrender.com/patient/${patientId}/files`);
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }
@@ -195,7 +195,7 @@ export default {
 async deleteFile(fileId) {
   try {
     const patientId = this.$route.params.id;
-    const response = await fetch(`http://localhost:8080/file/${fileId}/patient/${patientId}`, {
+    const response = await fetch(`https://webtechprojekt.onrender.com/file/${fileId}/patient/${patientId}`, {
       method: 'DELETE'
     });
 
@@ -222,7 +222,7 @@ async deleteFile(fileId) {
           redirect: "follow",
         };
 
-        fetch("http://localhost:8080/file", requestOptions)
+        fetch("https://webtechprojekt.onrender.com/file", requestOptions)
           .then((response) => response.json())
           .then((result) => {
             console.log(result);
@@ -294,7 +294,7 @@ async deleteFile(fileId) {
       };
 
       return fetch(
-        `http://localhost:8080/file/${fileId}/patient/${this.patient.id}`,
+        `https://webtechprojekt.onrender.com/file/${fileId}/patient/${this.patient.id}`,
         requestOptions
       )
         .then((response) => response.text())
@@ -316,7 +316,7 @@ async deleteFile(fileId) {
       try {
         const patientId = this.$route.params.id;
         const response = await fetch(
-          `http://localhost:8080/patient/${patientId}/todos`,
+          `https://webtechprojekt.onrender.com/patient/${patientId}/todos`,
           {
             method: "GET", // Changed from PUT to GET to fetch data
             redirect: "follow",
@@ -335,7 +335,7 @@ async deleteFile(fileId) {
       try {
         const patientId = this.$route.params.id;
         await fetch(
-          `http://localhost:8080/todo/${todoId}/patient/${patientId}`,
+          `https://webtechprojekt.onrender.com/todo/${todoId}/patient/${patientId}`,
           {
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
@@ -355,7 +355,7 @@ async deleteFile(fileId) {
         redirect: "follow",
       };
 
-      fetch("http://localhost:8080/todo", requestOptions)
+      fetch("https://webtechprojekt.onrender.com/todo", requestOptions)
         .then((response) => response.json())
         .then((result) => {
           console.log(result);
@@ -384,7 +384,7 @@ async deleteFile(fileId) {
       };
 
       return fetch(
-        `http://localhost:8080/todo/${todoId}/patient/${this.patient.id}`,
+        `https://webtechprojekt.onrender.com/todo/${todoId}/patient/${this.patient.id}`,
         requestOptions
       )
         .then((response) => response.text())

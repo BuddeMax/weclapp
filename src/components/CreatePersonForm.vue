@@ -76,15 +76,17 @@
         redirect: 'follow'
         };
 
-        fetch("http://localhost:8080/patient", requestOptions)
+        fetch("https://webtechprojekt.onrender.com/patient", requestOptions)
         .then(response => response.text())
         .then(result => console.log(result))
         .catch(error => console.log('error', error));
         }
+
+        this.getPatients;
         
       },
       getPatients() {
-      fetch("http://localhost:8080/patients")
+      fetch("https://webtechprojekt.onrender.com/patients")
         .then(response => response.json())
         .then(patientsData => {
           console.log("Aktualisierte Patientenliste:", patientsData);
@@ -115,6 +117,10 @@
 
   .is-invalid {
     border-color: red;
+  }
+
+  textarea{
+
   }
   </style>
   

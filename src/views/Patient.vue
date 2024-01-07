@@ -85,7 +85,7 @@ export default {
           redirect: 'follow',
         };
 
-        await fetch(`http://localhost:8080/patient/${patientId}`, requestOptions);
+        await fetch(`https://webtechprojekt.onrender.com/patient/${patientId}`, requestOptions);
         
         // Nach erfolgreichem Löschen die Patientenliste aktualisieren
         //test
