@@ -81,8 +81,6 @@
         .then(result => console.log(result))
         .catch(error => console.log('error', error));
         }
-
-        this.getPatients;
         
       },
       getPatients() {
@@ -90,8 +88,7 @@
         .then(response => response.json())
         .then(patientsData => {
           console.log("Aktualisierte Patientenliste:", patientsData);
-          // Hier können Sie die aktualisierte Patientenliste verarbeiten
-          // z.B. in einem Datenzustand speichern oder eine Ansicht aktualisieren
+
         })
         .catch(error => {
           console.error('Fehler beim Abrufen der Patientenliste:', error);

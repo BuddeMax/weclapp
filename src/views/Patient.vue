@@ -4,7 +4,7 @@
 
     <!-- Anzeige des Formulars -->
     <div v-if="showForm" class="form-container">
-      <CreatePersonForm @addPerson="addPerson" />
+      <create-person-form @click="addPerson"></create-person-form>
     </div>
 
     <!-- Button, um das Formular anzuzeigen oder auszublenden -->
@@ -96,12 +96,12 @@ export default {
     },
     async addPerson(person) {
       try {
-        // Hier implementiere die Logik zum Hinzufügen eines Patienten
-        console.log('Neuer Patient:', person);
-        // Füge hier die Logik hinzu, um den Patienten zu erstellen oder zu speichern
-
-        // Nach erfolgreichem Hinzufügen die Patientenliste aktualisieren
-        await this.getPatients();
+        console.log('Neuer Patient in Patient:', person);
+        console.log(this.patients);
+        // verzögere das fetchen um 10 sekunden
+        setTimeout(async () => {
+         await this.getPatients();
+        }, 1000);
       } catch (error) {
         console.error('Error adding person:', error);
       }
@@ -142,6 +142,9 @@ export default {
 
 button {
   margin: 10px; /* Abstand um die Schaltflächen hinzufügen */
+}
+.btn-new{
+  color: #000;
 }
 </style>
 
