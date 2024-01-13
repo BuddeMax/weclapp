@@ -450,6 +450,10 @@ async deleteFile(fileId) {
   border: 1px solid #ccc;
   padding: 10px;
   text-align: left;
+  max-width: none; /* Setzt eine maximale Breite für Zellen */
+  overflow: hidden; /* Verhindert Überlaufen von Inhalten */
+  text-overflow: ellipsis; /* Fügt '...' am Ende von überlangen Inhalten hinzu */
+  white-space: nowrap;
 }
 
 .file-table th,
@@ -457,7 +461,7 @@ async deleteFile(fileId) {
   background-color: #f2f2f2;
 }
 
-.btn {
+.btn, .btn-delete {
   padding: 10px 20px;
   background-color: #007bff;
   color: white;
@@ -473,7 +477,6 @@ async deleteFile(fileId) {
 
 .btn-delete {
   background-color: #dc3545;
-  color: white;
 }
 
 .btn-delete:hover {
@@ -486,48 +489,16 @@ async deleteFile(fileId) {
 
 .todo-form,
 .file-form {
-  width: 100%;
-  padding: 20px;
-  background-color: #f2f2f2; /* Hintergrundfarbe des Formulars */
-  margin-bottom: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
+  padding: 20px;
+  background-color: #f2f2f2;
+  margin-bottom: 20px;
 }
 
-/* Stile für Buttons */
-.btn {
-  margin: 10px; /* Abstand um die Schaltflächen hinzufügen */
-  padding: 10px 20px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  text-decoration: none;
-}
-
-.btn:hover {
-  background-color: #0056b3;
-}
-
-.btn-delete {
-  background-color: #dc3545;
-  color: white;
-}
-
-.btn-delete:hover {
-  background-color: #c82333;
-}
-.patient-details-head {
-  display: flex;
-  justify-content: space-between; /* Optional: Fügt Platz zwischen den Elementen hinzu */
-  background-color: #f2f2f2; /* Hintergrundfarbe ändern */
-  border: 1px solid #ccc; /* Umrandung hinzufügen */
-  padding: 10px; /* Padding hinzufügen, um den Text von der Umrandung zu trennen */
-  margin: 5px; /* Margin hinzufügen, um die Felder voneinander zu trennen */
-}
-
+.patient-details-head,
 .extra-box {
   display: flex;
   justify-content: space-between;
@@ -535,5 +506,40 @@ async deleteFile(fileId) {
   border: 1px solid #ccc;
   padding: 10px;
   margin: 5px;
+}
+
+/* Reaktionsfähige Anpassungen für mobile Geräte */
+@media screen and (max-width: 600px) {
+  .todo-form, .file-form, .patient-details-head, .extra-box {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn, .btn-delete {
+    width: auto;
+    height: auto;
+    margin: 10px 0;
+  }
+
+  .file-table, .todo-table {
+    display: block;
+    overflow-x: auto;
+  }
+  .file-table td {
+    white-space: normal; /* Erlaubt den Umbruch von Text in Zellen */
+    word-wrap: break-word; /* Erzwingt den Umbruch von langen Wörtern/URLs */
+    max-width: 150px; /* Entfernt die maximale Breite auf kleinen Bildschirmen */
+    white-space: normal; /* Erlaubt den Umbruch von Text in Zellen */
+    word-wrap: break-word;
+  }
+  .todo-table th {
+    white-space: normal; /* Erlaubt den Umbruch von Text in Zellen */
+    word-wrap: break-word; /* Erzwingt den Umbruch von langen Wörtern/URLs */
+    max-width: none; /* Entfernt die maximale Breite auf kleinen Bildschirmen */
+    white-space: normal; /* Erlaubt den Umbruch von Text in Zellen */
+    word-wrap: break-word;
+  }
+
+
 }
 </style>
