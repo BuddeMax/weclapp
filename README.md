@@ -1,5 +1,7 @@
 [![CI](https://github.com/BuddeMax/vue-frontend/actions/workflows/node.js.yml/badge.svg)](https://github.com/BuddeMax/vue-frontend/actions/workflows/node.js.yml)
 
+Info: Alle Dateien wurden mit Hilfe von Copilot und ChatGPT ertsellt und bearbeitet
+
 # vue-frontend
 
 ## Project setup
