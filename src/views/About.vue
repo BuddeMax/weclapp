@@ -119,7 +119,7 @@ export default {
       };
 
       // Fetch-Anfrage mit den vorbereiteten Optionen durchführen
-        fetch(`http://localhost:8080/api/user/${this.$store.state.userId}/checkIn/${this.$store.state.startDate}/${this.$store.state.endDate}`, requestOptions)
+        fetch(`https://gainguru.onrender.com/api/user/${this.$store.state.userId}/checkIn/${this.$store.state.startDate}/${this.$store.state.endDate}`, requestOptions)
             .then(response => {
               if (!response.ok) {
                 throw new Error('Netzwerkantwort war nicht ok');
@@ -162,7 +162,7 @@ export default {
       const startDateToUse = this.checkIns.length > 0 ? formattedStartDate : this.$store.state.startDate;
 
       // Fetch-Anfrage mit den vorbereiteten Optionen durchführen
-      fetch(`http://localhost:8080/api/user/${this.$store.state.userId}/weeklyCheckIn/${startDateToUse}/${this.$store.state.endDate}`, requestOptions)
+      fetch(`https://gainguru.onrender.com/api/user/${this.$store.state.userId}/weeklyCheckIn/${startDateToUse}/${this.$store.state.endDate}`, requestOptions)
           .then(response => {
             if (!response.ok) {
               throw new Error('Netzwerkantwort war nicht ok');

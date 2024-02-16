@@ -47,7 +47,7 @@ export default {
       setTimeout(this.sendRequest, 1000);
     },
     async sendRequest() {
-      const url = 'http://localhost:8080/api/v1/auth/register';
+      const url = 'https://gainguru.onrender.com/api/v1/auth/register';
       const user = {
         firstname: this.firstname,
         lastname: this.lastname,

@@ -113,7 +113,7 @@ export default {
       };
 
       // Sendet die Anfrage
-      fetch(`http://localhost:8080/api/user/${this.$store.state.userId}/checkIn`, requestOptions)
+      fetch(`https://gainguru.onrender.com/api/user/${this.$store.state.userId}/checkIn`, requestOptions)
           .then(response => response.json()) // Geändert zu .json() für ein JSON-Antwortformat
           .then(result => {
             console.log(result);

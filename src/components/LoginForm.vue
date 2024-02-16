@@ -30,8 +30,8 @@ export default {
       this.sendRequest();
     },
     async sendRequest() {
-      const loginUrl = 'http://localhost:8080/api/v1/auth/authenticate';
-      const userInfoUrl = 'http://localhost:8080/api/user/me'; // URL, um Benutzerinformationen zu fetchen
+      const loginUrl = 'https://gainguru.onrender.com/api/v1/auth/authenticate';
+      const userInfoUrl = 'https://gainguru.onrender.com/api/user/me'; // URL, um Benutzerinformationen zu fetchen
       const user = {
         email: this.email,
         password: this.password
