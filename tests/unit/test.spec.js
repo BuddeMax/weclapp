@@ -8,4 +8,6 @@ describe('AppNavbar.vue', () => {
   })
 })
 
+// Path: tests/unit/test.spec.js
+
 
