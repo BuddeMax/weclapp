@@ -1,7 +1,7 @@
 <template>
   <div>
-    <h2>Create Account</h2>
     <form @submit.prevent="submitForm">
+      <h2>Create Account</h2>
       <div>
         <label for="firstname">First name</label>
         <input type="text" id="firstname" v-model="firstname" required>
@@ -19,14 +19,9 @@
         <input type="password" id="password" v-model="password" required>
       </div>
       <button type="submit">Create Account</button>
-      <div>OR</div>
-      <button type="button">Sign up with Google</button>
-      <p>Bereits ein Account ?</p>
-      <router-link class="nav-link" to="/login">Login</router-link>
     </form>
   </div>
 </template>
-
 
 <script>
 export default {
@@ -36,44 +31,41 @@ export default {
       lastname: '',
       email: '',
       password: '',
-      token:{
-        access_token: '',
-        refresh_token: ''
-      }
     };
   },
   methods: {
-    submitForm() {
-      setTimeout(this.sendRequest, 1000);
-    },
-    async sendRequest() {
+    async submitForm() {
       const url = 'https://gainguru.onrender.com/api/v1/auth/register';
       const user = {
         firstname: this.firstname,
         lastname: this.lastname,
         email: this.email,
-        password: this.password
+        password: this.password,
       };
 
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(user)
-      });
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(user),
+        });
 
-      if (!response.ok) {
-        const message = `An error has occured: ${response.status}`;
-        throw new Error(message);
+        if (!response.ok) {
+          throw new Error(`An error has occured: ${response.status}`);
+        }
+
+        // Emit an event to signal successful registration
+        this.$emit('registration-success');
+      } catch (error) {
+        console.error(error);
       }
-
-      this.token = await response.json();
-      console.log(`JWT Token: ${this.token.access_token}`);
     },
   },
 };
 </script>
+
 
 <style scoped>
 form {
