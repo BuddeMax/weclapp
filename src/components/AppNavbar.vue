@@ -9,6 +9,8 @@
         <div class="navbar-nav mr-auto">
           <router-link class="nav-link" to="/">Home</router-link>
           <router-link class="nav-link" to="/about">CheckIn</router-link>
+          <!-- Entfernen von @click.native und Verwendung von @click -->
+          <router-link class="nav-link" to="/" @click="logout">Logout</router-link>
         </div>
       </div>
     </div>
@@ -17,7 +19,35 @@
 
 <script>
 export default {
-  name: 'AppNavbar'
+  name: 'AppNavbar',
+  methods: {
+    logout() {
+      // Annahme, dass der Token aus einer Authentifizierungsquelle, z.B. Vuex, localStorage oder einer ähnlichen Quelle stammt
+      const token = this.$store.state.token.access_token; // Angenommen, Ihr Token wird hier gespeichert
+
+      var myHeaders = new Headers();
+      myHeaders.append("Authorization", `Bearer ${token}`);
+
+      var raw = "";
+
+      var requestOptions = {
+        method: 'POST',
+        headers: myHeaders,
+        body: raw,
+        redirect: 'follow'
+      };
+
+      fetch("http://localhost:8000/api/v1/auth/logout", requestOptions)
+          .then(response => response.text())
+          .then(result => {
+            console.log(result);
+            this.$store.commit('setAuthentication', false);
+            // Navigieren Sie zur Login-Seite nach erfolgreichem Logout
+            this.$router.push('/login');
+          })
+          .catch(error => console.log('error', error));
+    }
+  }
 }
 </script>
 
@@ -26,3 +56,4 @@ export default {
   background-color: #ffffff;
 }
 </style>
+

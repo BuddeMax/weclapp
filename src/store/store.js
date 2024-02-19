@@ -11,7 +11,7 @@ export const store = createStore({
         endDate: '',
         weeklyCheckIn: false,
         checkInInput: false,
-        isLoading: false
+        isLoading: true
     },
     mutations: {
         setAuthentication(state, status) {
