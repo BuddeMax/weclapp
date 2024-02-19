@@ -69,14 +69,12 @@ export const store = createStore({
             commit('setLoading', true);
             axios.get('https://gainguru.onrender.com/api/v1/demo-controller/public')
                 .then(() => {
-                    // Erfolgslogik
+                    commit('setLoading', false);
                 })
                 .catch(() => {
-                    // Fehlerbehandlung
+                    commit('setLoading', false);
                 })
-                .finally(() => {
-                    commit('setLoading', false); // Wird immer ausgeführt, egal ob der Aufruf erfolgreich war oder nicht
-                });
+
         },
 
 

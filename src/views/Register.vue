@@ -9,11 +9,9 @@
 import { ref } from 'vue';
 import RegisterForm from '../components/RegisterForm.vue';
 import CompleteBanner from '../components/CompleteBanner.vue';
-import LoadingScreen from "@/components/LoadingScreen.vue";
 
 export default {
   components: {
-    LoadingScreen,
     RegisterForm,
     CompleteBanner,
   },

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useStore } from 'vuex';
 import LoginForm from "@/components/LoginForm.vue";
 import LoadingScreen from "@/components/LoadingScreen.vue";
@@ -9,7 +9,11 @@ let isLoading = ref(store.state.isLoading);  // Reaktive Referenz auf den Store-
 
 onMounted(async () => {
   await store.dispatch('checkDemoController');
-  isLoading.value = store.state.isLoading;  // Aktualisieren Sie die lokale Referenz nach dem Dispatch
+});
+
+// Überwache Änderungen an isLoading
+watch(() => store.state.isLoading, (newValue) => {
+  isLoading.value = newValue;
 });
 </script>
 
@@ -21,6 +25,10 @@ onMounted(async () => {
     <LoginForm />
   </div>
 </template>
+
+<style scoped>
+
+</style>
 
 
 <style scoped>

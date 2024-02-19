@@ -1,6 +1,9 @@
 <template>
-  <div class="loading-box">
-    <h2>Bitte warten</h2>
+  <div class="loading-overlay">
+    <div class="loading-box">
+      <h2 class="loading-message">Lädt</h2>
+      <div class="spinner"></div>
+    </div>
   </div>
 </template>
 
@@ -9,6 +12,15 @@
 </script>
 
 <style>
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
 h2 {
   text-align: center;
 }
@@ -38,5 +50,18 @@ h2 {
 .loading-message {
   color: black;
   font-size: 20px;
+}
+
+.spinner {
+  border: 4px solid rgba(0,0,0,0.1);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border-left-color: #09f;
+  animation: spin 1s linear infinite;
+}
+
+.loading-message {
+  animation: pulse 2s infinite;
 }
 </style>
