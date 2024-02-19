@@ -5,10 +5,16 @@
 
 <script>
 import AppNavbar from './components/AppNavbar' // Geänderter Import
+import KeepAliveService from './services/KeepAliveService';
+
 
 export default {
   name: 'App',
-  components: { AppNavbar } // Geänderter Komponentenname
+  components: { AppNavbar }, // Geänderter Komponentenname
+  mounted() {
+    const url = "https://gainguru.onrender.com/api/v1/demo-controller/public"; // Ersetzen Sie dies durch Ihre URL
+    KeepAliveService.keepAlive(url);
+  }
 }
 </script>
 

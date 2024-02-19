@@ -2,6 +2,7 @@
   <div>
     <form @submit.prevent="submitForm">
       <h2>Create Account</h2>
+      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
       <div>
         <label for="firstname">First name</label>
         <input type="text" id="firstname" v-model="firstname" required>
@@ -31,6 +32,7 @@ export default {
       lastname: '',
       email: '',
       password: '',
+      errorMessage: '', // Füge eine neue Datenproperty für die Fehlermeldung hinzu
     };
   },
   methods: {
@@ -53,11 +55,16 @@ export default {
         });
 
         if (!response.ok) {
-          throw new Error(`An error has occured: ${response.status}`);
+          // Überprüfe den Statuscode der Antwort
+          if (response.status === 403) {
+            this.errorMessage = 'Email-Adresse bereits vergeben. Bitte verwenden Sie eine andere Email-Adresse.';
+          } else {
+            throw new Error(`An error has occured: ${response.status}`);
+          }
+        } else {
+          // Emit an event to signal successful registration
+          this.$emit('registration-success');
         }
-
-        // Emit an event to signal successful registration
-        this.$emit('registration-success');
       } catch (error) {
         console.error(error);
       }
@@ -126,5 +133,9 @@ label {
   align-self: flex-start;
   color: #6c757d;
   font-size: 16px;
+}
+.error-message {
+  color: red;
+  text-align: center;
 }
 </style>

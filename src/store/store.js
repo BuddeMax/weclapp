@@ -10,7 +10,8 @@ export const store = createStore({
         startDate: '',
         endDate: '',
         weeklyCheckIn: false,
-        checkInInput: false
+        checkInInput: false,
+        isLoading: false
     },
     mutations: {
         setAuthentication(state, status) {
@@ -36,7 +37,10 @@ export const store = createStore({
         },
         setCheckInInput(state, input) {
             state.checkInInput = input;
-        }
+        },
+        setLoading(state, isLoading) {
+            state.isLoading = isLoading;
+        },
     },
     actions: {
         authenticate({ commit }, credentials) {
@@ -59,7 +63,19 @@ export const store = createStore({
                     commit('setToken', null);
                     return false;
                 });
-        }
+        },
+        checkDemoController({ commit }) {
+            commit('setLoading', true); // Vor dem API-Aufruf
+            axios.get('https://gainguru.onrender.com/api/v1/demo-controller/public')
+                .then(() => {
+                    commit('setLoading', false); // Bei Erfolg
+                    // Weitere Logik kann hier implementiert werden
+                })
+                .catch(() => {
+                    commit('setLoading', false); // Bei Fehler
+                    // Fehlerbehandlung
+                });
+        },
 
     }
 });
