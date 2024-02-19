@@ -31,6 +31,12 @@ h2 {
   margin: 10px 0;
   opacity: 0;
   animation: fadeIn 2s forwards;
+
+  /* Rahmen hinzufügen */
+  border: 1px solid #ccc;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 90%; /* oder einen anderen geeigneten Wert */
+  margin: 10px auto; /* zentriert den Rahmen horizontal */
 }
 
 .success-banner.form {
