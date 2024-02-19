@@ -64,18 +64,21 @@ export const store = createStore({
                     return false;
                 });
         },
+        // Im Vuex Store
         checkDemoController({ commit }) {
-            commit('setLoading', true); // Vor dem API-Aufruf
+            commit('setLoading', true);
             axios.get('https://gainguru.onrender.com/api/v1/demo-controller/public')
                 .then(() => {
-                    commit('setLoading', false); // Bei Erfolg
-                    // Weitere Logik kann hier implementiert werden
+                    // Erfolgslogik
                 })
                 .catch(() => {
-                    commit('setLoading', false); // Bei Fehler
                     // Fehlerbehandlung
+                })
+                .finally(() => {
+                    commit('setLoading', false); // Wird immer ausgeführt, egal ob der Aufruf erfolgreich war oder nicht
                 });
         },
+
 
     }
 });
