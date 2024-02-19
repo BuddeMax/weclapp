@@ -53,7 +53,6 @@ export default {
         }
 
         const token = await loginResponse.json();
-        console.log(`JWT Token: ${token.access_token}`);
         this.$store.commit('setAuthentication', true);
         this.$store.commit('setToken', token);
         this.$store.commit('setEmail', this.email);
@@ -82,11 +81,9 @@ export default {
         }
 
         const userData = await response.json();
-        console.log(`Benutzer ID: ${userData}`);
         // Speichern Sie die Benutzer-ID im Vuex Store
         this.$store.commit('setUserId', userData);
         // logge nun die gestorte id
-        console.log(`Benutzer ID: ${this.$store.state.userId}`);
       } catch (error) {
         console.error(`Fehler beim Fetchen der Benutzer-ID: ${error}`);
       }

@@ -129,7 +129,6 @@ export default {
             .then(data => {
               this.checkIns = data;
               this.checkIns.sort(this.compareDates); // Sort the Check-Ins
-              console.log('Daily CheckIns fetched and sorted:', this.checkIns);
               resolve();
             })
             .catch(error => {
@@ -172,7 +171,6 @@ export default {
           .then(data => {
             this.weeklyCheckIns = data;
             this.weeklyCheckIns.sort(this.compareWeeklyDates); // Sort the Weekly Check-Ins
-            console.log('Weekly CheckIns fetched and sorted:', this.weeklyCheckIns);
             // After fetching and sorting weekly check-ins, attempt to merge
             if (this.checkIns.length > 0) {
               this.mergeCheckIns();
@@ -211,7 +209,6 @@ export default {
       }
 
       this.mergedCheckIns = merged;
-      console.log('Merged CheckIns:', this.mergedCheckIns);
 
     },
 

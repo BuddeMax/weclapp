@@ -116,7 +116,6 @@ export default {
       fetch(`https://gainguru.onrender.com/api/user/${this.$store.state.userId}/checkIn`, requestOptions)
           .then(response => response.json()) // Geändert zu .json() für ein JSON-Antwortformat
           .then(result => {
-            console.log(result);
             this.$emit('checkInAdded');
             // Hier könnte man z.B. eine Erfolgsmeldung anzeigen
           })
