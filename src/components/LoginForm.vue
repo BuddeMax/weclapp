@@ -2,11 +2,11 @@
   <div>
     <form @submit.prevent="submitForm">
       <h2>Login</h2>
-      <div>
+      <div class="input-container">
         <label for="email">Email:</label>
         <input type="email" id="email" v-model="email" required>
       </div>
-      <div>
+      <div class="input-container">
         <label for="password">Password:</label>
         <input type="password" id="password" v-model="password" required>
       </div>
@@ -92,8 +92,6 @@ export default {
 };
 </script>
 
-
-
 <style scoped>
 form {
   display: flex;
@@ -109,18 +107,14 @@ form {
   transition: box-shadow 0.3s ease;
 }
 
-form:hover {
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+.input-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
 }
 
-h2 {
-  margin-bottom: 20px;
-  color: #495057;
-  font-size: 24px;
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-}
-
-input[type="text"], input[type="email"], input[type="password"] {
+input[type="email"], input[type="password"] {
   width: calc(100% - 20px);
   padding: 12px;
   border-radius: 8px;
@@ -129,7 +123,7 @@ input[type="text"], input[type="email"], input[type="password"] {
   transition: border-color 0.3s ease;
 }
 
-input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus {
+input[type="email"]:focus, input[type="password"]:focus {
   border-color: #80bdff;
   outline: none;
 }
@@ -150,8 +144,32 @@ button:hover {
 }
 
 label {
-  align-self: flex-start;
   color: #6c757d;
   font-size: 16px;
+  margin-bottom: 5px; /* Etwas Abstand zwischen Label und Input */
+}
+
+/* Media Queries für Handys */
+@media (max-width: 600px) {
+  form {
+    padding: 20px;
+    gap: 15px;
+    margin: 20px auto;
+    max-width: 90%; /* Anpassung der maximalen Breite für kleinere Bildschirme */
+  }
+
+  h2 {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
+
+  input[type="text"], input[type="email"], input[type="password"], button {
+    width: calc(100% - 24px); /* Anpassung der Breite mit einem kleinen Rand */
+    padding: 10px;
+  }
+
+  label {
+    font-size: 14px;
+  }
 }
 </style>

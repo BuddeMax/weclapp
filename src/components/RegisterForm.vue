@@ -3,19 +3,19 @@
     <form @submit.prevent="submitForm">
       <h2>Create Account</h2>
       <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
-      <div>
+      <div class="input-container">
         <label for="firstname">First name</label>
         <input type="text" id="firstname" v-model="firstname" required>
       </div>
-      <div>
+      <div class="input-container">
         <label for="lastname">Last name</label>
         <input type="text" id="lastname" v-model="lastname" required>
       </div>
-      <div>
+      <div class="input-container">
         <label for="email">Email</label>
         <input type="email" id="email" v-model="email" required>
       </div>
-      <div>
+      <div class="input-container">
         <label for="password">Password</label>
         <input type="password" id="password" v-model="password" required>
       </div>
@@ -89,15 +89,11 @@ form {
   transition: box-shadow 0.3s ease;
 }
 
-form:hover {
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
-
-h2 {
-  margin-bottom: 20px;
-  color: #495057;
-  font-size: 24px;
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+.input-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
 }
 
 input[type="text"], input[type="email"], input[type="password"] {
@@ -130,12 +126,38 @@ button:hover {
 }
 
 label {
-  align-self: flex-start;
   color: #6c757d;
   font-size: 16px;
+  margin-bottom: 5px; /* Etwas Abstand zwischen Label und Input */
 }
+
 .error-message {
   color: red;
   text-align: center;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+/* Media Queries für Handys */
+@media (max-width: 600px) {
+  form {
+    padding: 20px;
+    gap: 15px;
+    margin: 20px auto;
+    max-width: 90%; /* Anpassung der maximalen Breite für kleinere Bildschirme */
+  }
+
+  .input-container {
+    width: 100%; /* Stellt sicher, dass die Container die angepasste Formularbreite nutzen */
+  }
+
+  input[type="text"], input[type="email"], input[type="password"], button {
+    width: calc(100% - 24px); /* Anpassung der Breite mit einem kleinen Rand, um nicht die volle Breite zu nutzen */
+    padding: 10px;
+  }
+
+  label {
+    font-size: 14px;
+  }
 }
 </style>

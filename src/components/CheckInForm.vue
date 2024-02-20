@@ -10,7 +10,7 @@
         <input type="date" id="date" v-model="formData.date" required @change="validateDate">
       </div>
       <div class="form-group">
-        <label for="fatigue">Müdigkeit (1-10):</label>
+        <label for="fatigue">Erschöpfung (1-10):</label>
         <input type="number" id="fatigue" v-model="formData.fatigue" min="1" max="10" required>
       </div>
       <div class="form-group">
