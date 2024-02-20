@@ -99,31 +99,54 @@ export default {
     },
     async fetchData() {
       try {
-        await this.fetchCheckIns();
-        await this.fetchWeeklyCheckIns();
+        const startDate = this.$store.state.startDate;
+        const endDate = this.$store.state.endDate;
+
+        // Entscheide, ob fetchWeeklyCheckIns basierend auf dem Vorhandensein von startDate und endDate aufgerufen werden soll
+        if (startDate && endDate) {
+          // Wenn startDate und endDate gesetzt sind, beide Fetch-Operationen durchführen
+          await Promise.all([this.fetchCheckIns(), this.fetchWeeklyCheckIns()]);
+        } else {
+          // Wenn keine Daten gesetzt sind, nur fetchCheckIns ausführen
+          await this.fetchCheckIns();
+        }
+
+        // Nachdem die relevanten Daten gefetcht wurden, mergeCheckIns aufrufen
         this.mergeCheckIns();
       } catch (error) {
         console.error('Fehler beim Abrufen der Daten:', error);
       }
     },
+
     async fetchCheckIns() {
       return new Promise((resolve, reject) => {
-      // Header für die Authentifizierung vorbereiten
-      const myHeaders = new Headers();
-      myHeaders.append("Content-Type", "application/json");
-      // Stellen Sie sicher, dass Sie das tatsächliche Token aus dem Vuex Store verwenden
-      const token = this.$store.state.token.access_token; // Angenommen, Ihr Token wird hier gespeichert
-      myHeaders.append("Authorization", `Bearer ${token}`);
+        // Header für die Authentifizierung vorbereiten
+        const myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+        const token = this.$store.state.token.access_token; // Angenommen, Ihr Token wird hier gespeichert
+        myHeaders.append("Authorization", `Bearer ${token}`);
 
-      // Request-Optionen vorbereiten
-      const requestOptions = {
-        method: 'GET',
-        headers: myHeaders,
-        redirect: 'follow'
-      };
+        // Request-Optionen vorbereiten
+        const requestOptions = {
+          method: 'GET',
+          headers: myHeaders,
+          redirect: 'follow'
+        };
 
-      // Fetch-Anfrage mit den vorbereiteten Optionen durchführen
-        fetch(`https://gainguru.onrender.com/api/user/${this.$store.state.userId}/checkIn/${this.$store.state.startDate}/${this.$store.state.endDate}`, requestOptions)
+        // Basis-URL für die Fetch-Anfrage
+        let url = `https://gainguru.onrender.com/api/user/${this.$store.state.userId}/checkIns`;
+
+        // Überprüfen, ob startDate und endDate vorhanden sind
+        const startDate = this.$store.state.startDate;
+        const endDate = this.$store.state.endDate;
+
+        if (startDate && endDate) {
+          // Wenn startDate und endDate gesetzt sind, URL anpassen
+          url = `https://gainguru.onrender.com/api/user/${this.$store.state.userId}/checkIns/${startDate}/${endDate}`;
+        }
+
+        // Fetch-Anfrage mit den vorbereiteten Optionen durchführen
+        fetch(url, requestOptions)
             .then(response => {
               if (!response.ok) {
                 throw new Error('Netzwerkantwort war nicht ok');
