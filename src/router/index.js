@@ -1,9 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Home from '../views/Home.vue';
-import About from '../views/About.vue';
+import Profile from '../views/Profile.vue';
 import Login from '../views/Login.vue';
 import Register from '../views/Register.vue';
-import {store} from '../store/store'; // Importiere deinen Vuex Store hier
+import {store} from '../store/store';
+import CheckIn from "@/views/CheckIn.vue"; // Importiere deinen Vuex Store hier
 
 const routes = [
   {
@@ -13,9 +14,15 @@ const routes = [
     meta: { requiresAuth: true } // Setze requiresAuth für geschützte Routen
   },
   {
-    path: '/about',
-    name: 'About',
-    component: About,
+    path: '/checkIn',
+    name: 'CheckIn',
+    component: CheckIn,
+    meta: { requiresAuth: true } // Setze requiresAuth für geschützte Routen
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: Profile,
     meta: { requiresAuth: true } // Setze requiresAuth für geschützte Routen
   },
   {

@@ -8,8 +8,8 @@
       <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
         <div class="navbar-nav mr-auto">
           <router-link class="nav-link" to="/">Home</router-link>
-          <router-link class="nav-link" to="/about">CheckIn</router-link>
-          <!-- Entfernen von @click.native und Verwendung von @click -->
+          <router-link class="nav-link" to="/checkIn">CheckIn</router-link>
+          <router-link class="nav-link" to="/profile">Profile</router-link>
           <router-link class="nav-link" to="/" @click="logout">Logout</router-link>
         </div>
       </div>

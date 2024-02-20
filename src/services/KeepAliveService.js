@@ -10,8 +10,6 @@ export default class KeepAliveService {
                 console.error("Fehler bei der Keep-Alive-Anfrage:", error);
             }
         };
-
-        // Setzen Sie das Intervall auf 5 Minuten (300000 Millisekunden)
         setInterval(fetchData, 300000);
     }
 }

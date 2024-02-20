@@ -2,9 +2,13 @@
   <CheckInInput ref="checkInInputRef" />
   <CheckInForm v-if="isFormOpen" @checkInAdded="fetchData"></CheckInForm>
   <h1 class="text-center">Check-In List</h1>
+  <div class="checkIn-card">
+    <div class="card-contents scrollable-card">
   <div v-for="(item, index) in mergedCheckIns" :key="index">
     <CheckInCard v-if="item.type === 'daily'" :checkIn="item.data" :showHeader="index === 0" />
     <WeeklyCheckInCard v-else-if="item.type === 'weekly' && $store.state.weeklyCheckIn" :weeklyCheckIn="item.data" :showHeader="index === 0" />
+  </div>
+    </div>
   </div>
 </template>
 
@@ -18,7 +22,7 @@ import { store } from "@/store/store";
 import { watch } from 'vue';
 
 export default {
-  name: 'About',
+  name: 'CheckIn',
   components: {
     WeeklyCheckInCard,
     CheckInCard,
@@ -228,4 +232,5 @@ export default {
   width: 50px; /* Setzt die Breite des Bildes */
   height: auto; /* Setzt die Höhe automatisch, um das Seitenverhältnis zu bewahren */
 }
+
 </style>

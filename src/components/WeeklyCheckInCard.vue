@@ -3,8 +3,7 @@
     <table>
       <!-- Die Check-In Daten für jeden Eintrag -->
       <tr>
-        <td>{{ weeklyCheckIn.fromDate }} to {{weeklyCheckIn.toDate}}</td>
-        <td>{{ weeklyCheckIn.fatigue }}</td>
+        <td class="Date">{{ new Date(weeklyCheckIn.fromDate).toLocaleDateString('de-DE') }} to {{new Date(weeklyCheckIn.toDate).toLocaleDateString('de-DE')}}</td>        <td>{{ weeklyCheckIn.fatigue }}</td>
         <td>{{ weeklyCheckIn.mood }}</td>
         <td>{{ weeklyCheckIn.pain }}</td>
         <td>{{ weeklyCheckIn.weight }}</td>
@@ -38,42 +37,52 @@ export default {
 </script>
 
 
+
 <style scoped>
+
 .weekly-checkIn-card {
-  background-color: #8BB3FF;
-  border-radius: 8px;
-  overflow: hidden;
-  margin: 20px auto;
-  max-width: 80%;
+  background-color: #ffffff;
+  border-radius: 20px !important;
+  margin: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   transition: box-shadow 0.3s ease;
   font-family: 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
+.weekly-checkIn-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Stil für die Tabelle und Zellen */
 .weekly-checkIn-card table {
-  width: 100%;
+  overflow: hidden;
+  border-radius: 10px;
+  width: 1500px; /* Stellt die Tabelle auf volle Breite ein */
   border-collapse: collapse;
   margin: 0;
   padding: 0;
-  table-layout: fixed;
+  table-layout: fixed; /* Erlaubt der Tabelle, die Spaltenbreite dynamisch anzupassen */
 }
 
-.weekly-checkIn-card th, .weekly-checkIn-card td {
+.weekly-checkIn-card th,
+.weekly-checkIn-card td {
   padding: 15px;
   text-align: left;
   color: #495057;
   border-bottom: 1px solid #eaecef;
+  overflow: hidden; /* Verhindert Überlaufen des Inhalts */
+  white-space: nowrap; /* Text wird in einer einzigen Zeile gehalten */
+  text-overflow: ellipsis; /* Fügt "..." hinzu, wenn der Text überläuft */
 }
 
 .weekly-checkIn-card th {
-  background-color: #0056b3;
+  background-color: #007bff;
   color: white;
   font-weight: 600;
-  border: none;
 }
 
 .weekly-checkIn-card tr {
-  border-radius: 0;
+  background-color: #88bfff;
 }
 
 .weekly-checkIn-card tr:nth-child(even) {
@@ -84,29 +93,16 @@ export default {
   background-color: #e8f0fe;
 }
 
-.weekly-checkIn-card tr:last-child td {
-  border-bottom: none;
+.weekly-checkIn-card a {
+  color: #007bff;
+  text-decoration: none;
 }
 
-/* Stellt sicher, dass TH- und TD-Zellen ohne Verschiebung ausgerichtet sind */
-.weekly-checkIn-card th, .weekly-checkIn-card td {
-  border-collapse: collapse;
+.weekly-checkIn-card .Date {
+  white-space: normal; /* Erlaubt den Text, auf die nächste Zeile zu überlaufen */
+  height: 50px; /* Stellt sicher, dass genug Platz für zwei Zeilen vorhanden ist */
 }
 
-/* Entfernt den Zwischenraum zwischen den Tabellen */
-.weekly-checkIn-card table + table {
-  margin-top: 0;
-}
 
-/* Optional: Falls Sie eine Header-Zeile für die wöchentlichen Daten wollen */
-.weekly-checkIn-card thead th {
-  background-color: #007bff; /* Dunklere Farbe für den Header */
-  color: white;
-}
 
-/* Optional: Stil für die Zellen der letzten Spalte */
-.weekly-checkIn-card td:last-child {
-  text-align: center;
-  font-style: italic;
-}
 </style>
