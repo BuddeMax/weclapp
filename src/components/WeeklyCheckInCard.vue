@@ -43,6 +43,7 @@ export default {
 .weekly-checkIn-card {
   background-color: #ffffff;
   border-radius: 20px !important;
+  margin-left: 30px !important;
   margin: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   transition: box-shadow 0.3s ease;

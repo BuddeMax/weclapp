@@ -1,12 +1,13 @@
 <template>
   <div class="checkIn-form">
     <button class="toggle-form-button" @click="toggleForm">
+      <h3>CheckIn hinzufügen</h3>
       <img :src="isFormOpen ? require('@/assets/up-and-down-arrow.png') : require('@/assets/down-and-up-arrow.png')" alt="Toggle Form" class="toggle-form-image">
     </button>
     <form v-if="isFormOpen" @submit.prevent="submitForm">
       <div class="form-group">
         <label for="date">Datum:</label>
-        <input type="date" id="date" v-model="formData.date" required>
+        <input type="date" id="date" v-model="formData.date" required @change="validateDate">
       </div>
       <div class="form-group">
         <label for="fatigue">Müdigkeit (1-10):</label>
@@ -92,6 +93,16 @@ export default {
   methods: {
     toggleForm() {
       this.isFormOpen = !this.isFormOpen;
+    },
+    validateDate() {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Setzt die Zeit auf Mitternacht, um nur das Datum zu vergleichen
+      const inputDate = new Date(this.formData.date);
+      if (inputDate < today) {
+        if (!confirm('Das eingegebene Datum liegt in der Vergangenheit. Möchten Sie fortfahren?')) {
+          this.formData.date = ''; // Setzt das Datum zurück, wenn der Benutzer "Abbrechen" wählt
+        }
+      }
     },
     submitForm() {
       // Headers für die Fetch-Anfrage
