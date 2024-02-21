@@ -9,6 +9,9 @@
         <label for="date">Datum:</label>
         <input type="date" id="date" v-model="formData.date" required @change="validateDate">
       </div>
+      <div v-if="dateInPast" class="alert alert-warning" role="alert">
+        Das eingegebene Datum liegt in der Vergangenheit. Überprüfen Sie, ob das richtige Datum eingegeben wurde.
+      </div>
       <div class="form-group">
         <label for="fatigue">Erschöpfung (1-10):</label>
         <input type="number" id="fatigue" v-model="formData.fatigue" min="1" max="10" required>
@@ -87,7 +90,8 @@ export default {
         water: 0,
         steps: 0,
         url: ''
-      }
+      },
+      dateInPast: false, // Hinzugefügt, um zu verfolgen, ob das Datum in der Vergangenheit liegt
     };
   },
   methods: {
@@ -96,27 +100,12 @@ export default {
     },
     validateDate() {
       const today = new Date();
-      today.setHours(0, 0, 0, 0); // Setzt die Zeit auf Mitternacht, um nur das Datum zu vergleichen
+      today.setHours(0, 0, 0, 0);
       const inputDate = new Date(this.formData.date);
-
-      // Überprüft, ob das eingegebene Datum in der Vergangenheit liegt
       if (inputDate < today) {
-        // Zeigt eine Warnmeldung an
-        this.$buefy.dialog.alert({
-          title: 'Ungültiges Datum',
-          message: 'Das eingegebene Datum liegt in der Vergangenheit. Bitte wählen Sie ein gültiges Datum.',
-          confirmText: 'OK',
-          type: 'is-danger',
-          hasIcon: true,
-          icon: 'times-circle',
-          iconPack: 'fa'
-        });
-
-        // Alternative Methode, falls Buefy oder eine ähnliche Bibliothek nicht verwendet wird:
-        // alert('Das eingegebene Datum liegt in der Vergangenheit. Bitte wählen Sie ein gültiges Datum.');
-
-        // Setzt das Datum zurück, falls notwendig
-        this.formData.date = '';
+        this.dateInPast = true; // Setzt die Warnung, dass das Datum in der Vergangenheit liegt
+      } else {
+        this.dateInPast = false; // Setzt zurück, falls das Datum gültig ist
       }
     },
     submitForm() {
