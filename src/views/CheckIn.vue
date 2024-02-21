@@ -102,7 +102,8 @@ export default {
         const startDate = this.$store.state.startDate;
         const endDate = this.$store.state.endDate;
 
-        // Entscheide, ob fetchWeeklyCheckIns basierend auf dem Vorhandensein von startDate und endDate aufgerufen werden soll
+// Überprüfe ob startDate und endDate leer sind
+
         if (startDate && endDate) {
           // Wenn startDate und endDate gesetzt sind, beide Fetch-Operationen durchführen
           await Promise.all([this.fetchCheckIns(), this.fetchWeeklyCheckIns()]);

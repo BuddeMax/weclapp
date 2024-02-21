@@ -98,10 +98,25 @@ export default {
       const today = new Date();
       today.setHours(0, 0, 0, 0); // Setzt die Zeit auf Mitternacht, um nur das Datum zu vergleichen
       const inputDate = new Date(this.formData.date);
+
+      // Überprüft, ob das eingegebene Datum in der Vergangenheit liegt
       if (inputDate < today) {
-        if (!confirm('Das eingegebene Datum liegt in der Vergangenheit. Möchten Sie fortfahren?')) {
-          this.formData.date = ''; // Setzt das Datum zurück, wenn der Benutzer "Abbrechen" wählt
-        }
+        // Zeigt eine Warnmeldung an
+        this.$buefy.dialog.alert({
+          title: 'Ungültiges Datum',
+          message: 'Das eingegebene Datum liegt in der Vergangenheit. Bitte wählen Sie ein gültiges Datum.',
+          confirmText: 'OK',
+          type: 'is-danger',
+          hasIcon: true,
+          icon: 'times-circle',
+          iconPack: 'fa'
+        });
+
+        // Alternative Methode, falls Buefy oder eine ähnliche Bibliothek nicht verwendet wird:
+        // alert('Das eingegebene Datum liegt in der Vergangenheit. Bitte wählen Sie ein gültiges Datum.');
+
+        // Setzt das Datum zurück, falls notwendig
+        this.formData.date = '';
       }
     },
     submitForm() {
