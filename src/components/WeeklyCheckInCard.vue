@@ -41,9 +41,10 @@ export default {
 <style scoped>
 
 .weekly-checkIn-card {
+  width: 80%;
   background-color: #ffffff;
   border-radius: 20px !important;
-  margin-left: 30px !important;
+  margin: auto !important; /* Center the card */
   margin: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   transition: box-shadow 0.3s ease;
@@ -58,7 +59,7 @@ export default {
 .weekly-checkIn-card table {
   overflow: hidden;
   border-radius: 10px;
-  width: 1500px; /* Stellt die Tabelle auf volle Breite ein */
+  width: 100%; /* Stellt die Tabelle auf volle Breite ein */
   border-collapse: collapse;
   margin: 0;
   padding: 0;
@@ -102,6 +103,28 @@ export default {
 .weekly-checkIn-card .Date {
   white-space: normal; /* Erlaubt den Text, auf die nächste Zeile zu überlaufen */
   height: 50px; /* Stellt sicher, dass genug Platz für zwei Zeilen vorhanden ist */
+}
+
+@media (max-width: 600px) {
+  .weekly-checkIn-card {
+    width: 80%; /* Adjusted to use full width of its container */
+    background-color: #ffffff;
+    border-radius: 20px !important;
+    margin-left: 30px !important;
+    margin: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.3s ease;
+    font-family: 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  }
+  .weekly-checkIn-card table {
+    overflow: hidden;
+    border-radius: 10px;
+    width: 1500px; /* Stellt die Tabelle auf volle Breite ein */
+    border-collapse: collapse;
+    margin: 0;
+    padding: 0;
+    table-layout: fixed; /* Erlaubt der Tabelle, die Spaltenbreite dynamisch anzupassen */
+  }
 }
 
 

@@ -7,67 +7,71 @@
     <form v-if="isFormOpen" @submit.prevent="submitForm">
       <div class="form-group">
         <label for="date">Datum:</label>
-        <input type="date" id="date" v-model="formData.date" required @change="validateDate">
+        <input type="date" id="date" v-model="formData.date" @change="validateDate">
       </div>
       <div v-if="dateInPast" class="alert alert-warning" role="alert">
         Das eingegebene Datum liegt in der Vergangenheit. Überprüfen Sie, ob das richtige Datum eingegeben wurde.
       </div>
       <div class="form-group">
-        <label for="fatigue">Erschöpfung (1-10):</label>
-        <input type="number" id="fatigue" v-model="formData.fatigue" min="1" max="10" required>
-      </div>
-      <div class="form-group">
-        <label for="mood">Stimmung (1-10):</label>
-        <input type="number" id="mood" v-model="formData.mood" min="1" max="10" required>
-      </div>
-      <div class="form-group">
-        <label for="pain">Schmerz (1-10):</label>
-        <input type="number" id="pain" v-model="formData.pain" min="1" max="10" required>
-      </div>
-      <div class="form-group">
         <label for="weight">Gewicht (kg):</label>
-        <input type="number" id="weight" v-model="formData.weight" step="0.1" required>
+        <input type="number" id="weight" v-model="formData.weight" step="0.01">
       </div>
       <div class="form-group">
         <label for="sleep">Schlaf (hh:mm):</label>
-        <input type="time" id="sleep" v-model="formData.sleep" required>
+        <input type="time" id="sleep" v-model="formData.sleep">
       </div>
       <div class="form-group">
-        <label for="heartRate">Herzrate:</label>
-        <input type="number" id="heartRate" v-model="formData.heartRate" required>
+        <label for="fatigue">Erschöpfung (1-10):</label>
+        <input type="number" id="fatigue" v-model="formData.fatigue" min="1" max="10">
+      </div>
+      <div class="form-group">
+        <label for="mood">Stimmung (1-10):</label>
+        <input type="number" id="mood" v-model="formData.mood" min="1" max="10">
+      </div>
+      <div class="form-group">
+        <label for="pain">Schmerz (1-10):</label>
+        <input type="number" id="pain" v-model="formData.pain" min="1" max="10">
       </div>
       <div class="form-group">
         <label for="calories">Kalorien:</label>
-        <input type="number" id="calories" v-model="formData.calories" required>
+        <input type="number" id="calories" v-model="formData.calories">
       </div>
       <div class="form-group">
         <label for="protein">Protein (g):</label>
-        <input type="number" id="protein" v-model="formData.protein" required>
+        <input type="number" id="protein" v-model="formData.protein">
       </div>
       <div class="form-group">
         <label for="carb">Kohlenhydrate (g):</label>
-        <input type="number" id="carb" v-model="formData.carb" required>
+        <input type="number" id="carb" v-model="formData.carb">
       </div>
       <div class="form-group">
         <label for="fat">Fett (g):</label>
-        <input type="number" id="fat" v-model="formData.fat" required>
+        <input type="number" id="fat" v-model="formData.fat">
       </div>
       <div class="form-group">
         <label for="water">Wasser (ml):</label>
-        <input type="number" id="water" v-model="formData.water" required>
+        <input type="number" id="water" v-model="formData.water">
       </div>
       <div class="form-group">
         <label for="steps">Schritte:</label>
-        <input type="number" id="steps" v-model="formData.steps" required>
+        <input type="number" id="steps" v-model="formData.steps">
+      </div>
+      <div class="form-group">
+        <label for="heartRate">Herzrate:</label>
+        <input type="number" id="heartRate" v-model="formData.heartRate">
       </div>
       <div class="form-group">
         <label for="url">URL:</label>
         <input type="url" id="url" v-model="formData.url">
       </div>
+      <div v-if="checkInExists" class="alert alert-warning" role="alert">
+        Ein CheckIn für den Tag ist bereits vorhanden.
+      </div>
       <button type="submit">CheckIn hinzufügen</button>
     </form>
   </div>
 </template>
+
 
 <script>
 export default {
@@ -77,21 +81,22 @@ export default {
       // Initialisiert das Formular-Datenmodell
       formData: {
         date: '',
-        fatigue: 0,
-        mood: 0,
-        pain: 0,
-        weight: 0,
+        fatigue: null, // Geändert von 0 zu null
+        mood: null, // Optional: Ändern, falls auch andere Felder optional sein sollen
+        pain: null,
+        weight: null,
         sleep: '',
-        heartRate: 0,
-        calories: 0,
-        protein: 0,
-        carb: 0,
-        fat: 0,
-        water: 0,
-        steps: 0,
+        heartRate: null,
+        calories: null,
+        protein: null,
+        carb: null,
+        fat: null,
+        water: null,
+        steps: null,
         url: ''
       },
       dateInPast: false, // Hinzugefügt, um zu verfolgen, ob das Datum in der Vergangenheit liegt
+      checkInExists: false,
     };
   },
   methods: {
@@ -129,14 +134,20 @@ export default {
 
       // Sendet die Anfrage
       fetch(`https://gainguru.onrender.com/api/user/${this.$store.state.userId}/checkIn`, requestOptions)
-          .then(response => response.json()) // Geändert zu .json() für ein JSON-Antwortformat
+          .then(response => {
+            if (response.status === 403) {
+              this.checkInExists = true; // Setzt die Warnung, dass ein CheckIn für den Tag bereits vorhanden ist
+              throw new Error('Ein CheckIn für den Tag ist bereits vorhanden');
+            } else {
+              this.checkInExists = false; // Setzt zurück, falls der CheckIn erfolgreich hinzugefügt wurde
+              return response.json();
+            }
+          })
           .then(result => {
             this.$emit('checkInAdded');
-            // Hier könnte man z.B. eine Erfolgsmeldung anzeigen
           })
           .catch(error => {
             console.log('error', error);
-            // Hier könnte man z.B. eine Fehlermeldung anzeigen
           });
     }
   }
@@ -224,6 +235,11 @@ button no-border {
 .toggle-form-image {
   width: 20px;
   height: 20px;
+}
+.checkIn-form .alert {
+  color: #721c24;
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
 }
 </style>
 
