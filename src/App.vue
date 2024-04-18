@@ -1,19 +1,19 @@
 <template>
-  <app-navbar></app-navbar>
-  <router-view/>
+  <div id="app">
+    <Home />
+  </div>
 </template>
 
 <script>
-import AppNavbar from './components/AppNavbar' // Geänderter Import
-
+import Home from "@/views/Home.vue"; // Import der Home-Komponente
 
 export default {
   name: 'App',
-  components: { AppNavbar }
+  components: {
+    Home
+  }
 }
 </script>
-
-
 
 <style>
 html, body, #app {
@@ -31,5 +31,4 @@ body {
   text-align: center;
   color: #2c3e50;
 }
-
 </style>
