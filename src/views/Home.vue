@@ -3,13 +3,13 @@
     <h1>Weclapp Timetrack</h1>
 
     <button @click="fetchData">Fetch Data</button>
-    <div class="api-input">
+    <div>
       <label for="apiKeyInput">API Key:</label>
-      <input id="apiKeyInput" type="text" v-model="apiKey" class="input">
+      <input id="apiKeyInput" type="text" v-model="apiKey" class="api-input">
     </div>
-    <div class="domain-input">
+    <div >
       <label for="domainInput">Domain:</label>
-      <input id="domainInput" type="text" v-model="domain" class="input">
+      <input id="domainInput" type="text" v-model="domain" class="domain-input">
     </div>
 
     <div>
@@ -36,9 +36,12 @@
         <option v-for="user in users" :key="user.id" :value="user.id">{{ user.firstName }} {{ user.lastName }} ({{ user.email }})</option>
       </select>
     </div>
-    <div class="file-upload" style="flex-direction: column; justify-content: center; align-items: center;">
-      <input type="file" accept=".xlsx,.xls,.csv" @change="handleFileUpload">
-      <button @click="readData">Read</button>
+    <div class="file-input">
+      <input type="file" id="file" @change="handleFileUpload" accept=".xlsx,.xls,.csv">
+      <label for="file">Upload File</label>
+    </div>
+    <div>
+      <button @click="readData">Read Data</button>
     </div>
     <div>
       <button @click="postAllTimeRecords">Post Time Record</button>
@@ -76,7 +79,6 @@ import axios, {post} from "axios";
 
 
 export default {
-  name: 'ExcelReader',
   methods: {
     async post(url, data) {
       try {
@@ -84,6 +86,15 @@ export default {
         return response.data;
       } catch (error) {
         console.error('Error with post method:', error);
+      }
+    },
+    handleFileUpload(event) {
+      const fileNameLabel = document.getElementById('file-name');
+      const files = event.target.files;
+      if (files.length > 0) {
+        fileNameLabel.textContent = files[0].name;
+      } else {
+        fileNameLabel.textContent = 'No file chosen...';
       }
     }
   },
@@ -102,6 +113,7 @@ export default {
     const message = ref('');
     const apiKey = ref(localStorage.getItem('apiKey') || '');
     const domain = ref(localStorage.getItem('domain') || '');
+
 
 
 
@@ -354,120 +366,177 @@ export default {
 </script>
 
 
-
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
+}
 
 .container {
   max-width: 960px;
-  margin: 0 auto;
+  margin: 40px auto;
   padding: 20px;
   text-align: center;
-  font-family: 'Nunito', sans-serif;
-  color: #000000; /* Schwarz für Text */
-  background-color: #ffffff; /* Weiß für Hintergrund */
 }
 
-.file-upload, .dropdown {
-  margin: 20px auto;
-  display: block;
-  width: 250px;
-  text-align: center;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  color: #000000; /* Schwarz für Text */
+h1 {
+  font-size: 2.5rem;
+  color: #333;
+  margin-bottom: 1rem;
 }
 
-.api-input {
-  margin: 10px auto;
-  display: block;
-  width: calc(100% - 22px);
-  text-align: center;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  color: #000000; /* Schwarz für Text */
-}
-
-.domain-input {
-  margin: 10px auto;
-  display: block;
-  width: calc(100% - 22px);
-  text-align: center;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  color: #000000; /* Schwarz für Text */
-}
-
-h1, h2 {
-  color: #000000; /* Schwarz für Überschriften */
-  font-weight: 700;
-}
-
-button {
-  cursor: pointer;
-  background: #ec6602; /* Orange für Buttons */
-  color: #ffffff; /* Weiß für Button-Text */
-  border: none;
+input, select, button {
+  width: 100%;
+  padding: 15px;
+  margin: 10px 0;
+  border: 2px solid #ddd; /* Subtle borders */
   border-radius: 8px;
-  padding: 10px 20px;
-  margin: 10px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  font-family: 'Roboto', sans-serif;
   font-size: 1rem;
 }
 
+input[type="text"], select {
+  background-color: #fff;
+  color: #333;
+}
+
+input[type="text"]:focus, select:focus {
+  border-color: #555; /* Focus effect */
+  outline: none;
+}
+
+button {
+  color: #fff;
+  background-color: #007BFF; /* Bootstrap primary color */
+  border: none;
+  font-size: 1.1rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: background-color 0.3s ease;
+}
+
 button:hover {
-  background: #b35402; /* Dunkleres Orange für Button-Hover */
-  box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+  background-color: #0056b3; /* Darker on hover */
 }
 
-input[type="file"], input[type="text"], select {
-  margin-bottom: 10px;
-  padding: 10px;
-  border: 2px solid #000000; /* Schwarz für Input-Border */
+button:active {
+  background-color: #003d82; /* Even darker on active */
+}
+
+/* Styling file input */
+.file-input-container {
+  margin: 20px 0;
+  padding: 15px;
+  border: 2px dashed #ddd;
   border-radius: 8px;
-  width: calc(100% - 22px);
+  background-color: #fafafa;
+  text-align: center;
   transition: border-color 0.3s;
-  color: #000000; /* Schwarz für Text */
-  background-color: #ffffff; /* Weiß für Hintergrund */
 }
 
-input[type="file"]:hover, input[type="text"]:hover, select:hover {
-  border-color: #ec6602; /* Orange für Input-Hover */
+.file-input-container:hover {
+  border-color: #007BFF; /* Highlight effect on hover */
 }
 
-.data-table {
-  margin-top: 20px;
+input[type="file"] {
+  opacity: 0;
+  width: 0.1px;
+  height: 0.1px;
+  position: absolute;
 }
 
+.file-input-label {
+  display: inline-block;
+  background-color: #007BFF;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.file-input-label:hover {
+  background-color: #0056b3; /* Darker on hover */
+}
+
+.file-input-label:active {
+  background-color: #003d82; /* Even darker on active */
+}
+
+/* Adjusting Table Styles */
 table {
   width: 100%;
   border-collapse: collapse;
+  margin-top: 20px;
 }
 
 th, td {
   padding: 10px;
+  border: 1px solid #ddd;
   text-align: left;
 }
 
 thead {
-  background-color: #F5F5F5;
+  background-color: #f7f7f7;
 }
 
 tbody tr {
   transition: background-color 0.3s;
 }
 
-tbody tr:hover {
-  background-color: #EEEEEE; /* Hover effect for rows */
+tbody tr:nth-child(even) {
+  background-color: #f0f0f0;
 }
 
-tbody tr:nth-child(even) {
-  background-color: #FAFAFA; /* Zebra striping */
+tbody tr:hover {
+  background-color: #e8e8e8;
 }
+
+.file-input {
+  position: relative;
+  margin: 10px 0;
+}
+
+.file-input input[type="file"] {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.file-input label {
+  display: block;
+  background-color: #007BFF;
+  color: white;
+  padding: 15px;
+  text-align: center;
+  border-radius: 8px;
+  transition: background-color 0.3s;
+  font-size: 1.1rem;
+  font-weight: 500;
+  font-family: 'Roboto', sans-serif;
+  text-transform: uppercase;
+
+
+}
+
+.file-input label:hover {
+  background-color: #0056b3;
+}
+
+
+
+/* When a file is selected, use JavaScript to change the content of the pseudo-element or the text of the separate element */
+
 
 
 
@@ -476,17 +545,8 @@ tbody tr:nth-child(even) {
     padding: 10px;
   }
 
-  .file-upload, .dropdown {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  button {
-    margin-top: 10px;
-  }
-
-  input[type="file"], input[type="text"], select {
-    width: 100%;
+  h1 {
+    font-size: 2rem;
   }
 }
 </style>
