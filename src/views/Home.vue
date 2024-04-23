@@ -189,7 +189,7 @@ export default {
     const fetchSelectedSalesOrder = async (selectedValue) => {
       console.log('fetchSelectedSalesOrder called with: ', selectedValue);
       if (!selectedValue) return;
-      const url = `https://bbmjboksjsbyiqe.weclapp.com/webapp/api/v1/salesOrder/id/${selectedValue}`;
+      const url = `/webapp/api/v1/salesOrder/id/${selectedValue}`;
       try {
         const response = await fetch(url, {
           method: 'GET',
