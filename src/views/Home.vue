@@ -170,7 +170,7 @@ export default {
 
       try {
         // Verwenden Sie den Proxy-Pfad anstelle der vollständigen URL
-        const response = await fetch('/webapp/api/v1/salesOrder', requestOptions);
+        const response = await fetch('https://bbmjboksjsbyiqe.weclapp.com/webapp/api/v1/salesOrder', requestOptions);
         const result = await response.json();
         if (response.ok) {
           salesOrders.value = result.result.map(order => ({
@@ -189,7 +189,7 @@ export default {
     const fetchSelectedSalesOrder = async (selectedValue) => {
       console.log('fetchSelectedSalesOrder called with: ', selectedValue);
       if (!selectedValue) return;
-      const url = `/webapp/api/v1/salesOrder/id/${selectedValue}`;
+      const url = `https://bbmjboksjsbyiqe.weclapp.com/webapp/api/v1/salesOrder/id/${selectedValue}`;
       try {
         const response = await fetch(url, {
           method: 'GET',
@@ -216,6 +216,7 @@ export default {
     };
 
     const fetchUsers = async () => {
+
       const myHeaders = new Headers();
       myHeaders.append("Accept", "application/json");
       myHeaders.append("Content-Type", "application/json");
@@ -228,13 +229,19 @@ export default {
         redirect: "follow"
       };
 
-      fetch("/webapp/api/v1/user", requestOptions)
-          .then(response => response.json())
-          .then(parsedResult => {
+      fetch("https://bbmjboksjsbyiqe.weclapp.com/webapp/api/v1/user", requestOptions)
+          .then((response) => response.text())
+          //speichere die antowrt in result
+          .then((result) => {
+            //parse die antwort in ein json objekt
+            const parsedResult = JSON.parse(result);
+            //speichere das result in users
             users.value = parsedResult.result;
-            console.log("Users fetched successfully: ", users.value);
           })
-          .catch(error => console.error("Error fetching users: ", error));
+          .then((result) => console.log(result))
+          .catch((error) => console.error(error));
+
+
     };
 
     const postTimeRecord = async (item) => {
@@ -262,9 +269,9 @@ export default {
       };
 
       try {
-        const response = await fetch("/webapp/api/v1/timeRecord", requestOptions);
-        const result = await response.json();
-        console.log("Time record posted successfully: ", result);
+        const response = await fetch("https://bbmjboksjsbyiqe.weclapp.com/webapp/api/v1/timeRecord", requestOptions);
+        const result = await response.text();
+        console.log(result);
       } catch (error) {
         console.error('Error posting time record:', error);
       }
@@ -275,6 +282,11 @@ export default {
         await postTimeRecord(item);
       }
     };
+
+// Führen Sie den POST-Request für jede Zeile in der Excel-Datei aus
+    data.value.forEach(item => {
+      postTimeRecord(item);
+    });
 
     const fetchData = () => {
       fetchSalesOrders();
