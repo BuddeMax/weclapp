@@ -1,7 +1,7 @@
 {
-  "orientation": "landscape",
-  "background_color": "#ec6602",
-  "display": "standalone",
+  "orientation": "natural",
+  "background_color": "#EC6602",
+  "display": "fullscreen",
   "form_factor": "wide",
   "icons": [
     {
