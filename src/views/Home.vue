@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <h1>Weclapp Timetrack</h1>
+    <h1>Weclapp Time Track</h1>
 
     <button @click="fetchData">Fetch Data</button>
     <div>
@@ -413,7 +413,7 @@ input[type="text"]:focus, select:focus {
 
 button {
   color: #fff;
-  background-color: #007BFF; /* Bootstrap primary color */
+  background-color: #ec6602; /* Bootstrap primary color */
   border: none;
   font-size: 1.1rem;
   font-weight: 500;
@@ -423,26 +423,11 @@ button {
 }
 
 button:hover {
-  background-color: #0056b3; /* Darker on hover */
+  background-color: #FA8C47; /* Darker on hover */
 }
 
 button:active {
-  background-color: #003d82; /* Even darker on active */
-}
-
-/* Styling file input */
-.file-input-container {
-  margin: 20px 0;
-  padding: 15px;
-  border: 2px dashed #ddd;
-  border-radius: 8px;
-  background-color: #fafafa;
-  text-align: center;
-  transition: border-color 0.3s;
-}
-
-.file-input-container:hover {
-  border-color: #007BFF; /* Highlight effect on hover */
+  background-color: #ec6602; /* Even darker on active */
 }
 
 input[type="file"] {
@@ -450,23 +435,6 @@ input[type="file"] {
   width: 0.1px;
   height: 0.1px;
   position: absolute;
-}
-
-.file-input-label {
-  display: inline-block;
-  background-color: #007BFF;
-  color: #fff;
-  padding: 10px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.file-input-label:hover {
-  background-color: #0056b3; /* Darker on hover */
-}
-
-.file-input-label:active {
-  background-color: #003d82; /* Even darker on active */
 }
 
 /* Adjusting Table Styles */
@@ -515,7 +483,7 @@ tbody tr:hover {
 
 .file-input label {
   display: block;
-  background-color: #007BFF;
+  background-color: #ec6602;
   color: white;
   padding: 15px;
   text-align: center;
@@ -530,8 +498,10 @@ tbody tr:hover {
 }
 
 .file-input label:hover {
-  background-color: #0056b3;
+  background-color: #FA8C47;
 }
+
+
 
 
 
