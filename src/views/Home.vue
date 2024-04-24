@@ -162,6 +162,7 @@ export default {
       myHeaders.append("Accept", "application/json");
       myHeaders.append("AuthenticationToken", apiKey.value);
 
+
       const requestOptions = {
         method: "GET",
         headers: myHeaders,
@@ -170,7 +171,7 @@ export default {
 
       try {
         // Verwenden Sie den Proxy-Pfad anstelle der vollständigen URL
-        const response = await fetch('https://bbmjboksjsbyiqe.weclapp.com/webapp/api/v1/salesOrder', requestOptions);
+        const response = await fetch(`https://${domain.value}.weclapp.com/webapp/api/v1/salesOrder`, requestOptions);
         const result = await response.json();
         if (response.ok) {
           salesOrders.value = result.result.map(order => ({
@@ -189,7 +190,7 @@ export default {
     const fetchSelectedSalesOrder = async (selectedValue) => {
       console.log('fetchSelectedSalesOrder called with: ', selectedValue);
       if (!selectedValue) return;
-      const url = `https://bbmjboksjsbyiqe.weclapp.com/webapp/api/v1/salesOrder/id/${selectedValue}`;
+      const url = `https://${domain.value}.weclapp.com/webapp/api/v1/salesOrder/id/${selectedValue}`;
       try {
         const response = await fetch(url, {
           method: 'GET',
@@ -229,7 +230,7 @@ export default {
         redirect: "follow"
       };
 
-      fetch("https://bbmjboksjsbyiqe.weclapp.com/webapp/api/v1/user", requestOptions)
+      fetch(`https://${domain.value}.weclapp.com/webapp/api/v1/user`, requestOptions)
           .then((response) => response.text())
           //speichere die antowrt in result
           .then((result) => {
@@ -269,7 +270,7 @@ export default {
       };
 
       try {
-        const response = await fetch("https://bbmjboksjsbyiqe.weclapp.com/webapp/api/v1/timeRecord", requestOptions);
+        const response = await fetch(`https://${domain.value}.weclapp.com/webapp/api/v1/timeRecord`, requestOptions);
         const result = await response.text();
         console.log(result);
       } catch (error) {
