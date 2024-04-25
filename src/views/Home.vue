@@ -5,18 +5,37 @@
     <button @click="fetchData">Fetch Data</button>
     <div>
       <label for="apiKeyInput">API Key:</label>
-      <input id="apiKeyInput" type="text" v-model="apiKey" class="api-input">
+      <input
+          id="apiKeyInput"
+          type="text"
+          v-model="apiKey"
+          :class="{'collapsed-input': apiKeyConfirmed, 'blurred': apiKeyConfirmed && !apiKeyVisible}"
+          @input="confirmInput('apiKey', $event.target.value)"
+          @click="apiKeyVisible = true"
+          @blur="apiKeyVisible = false"
+          class="api-input"
+      >
     </div>
-    <div >
+    <div>
       <label for="domainInput">Domain:</label>
-      <input id="domainInput" type="text" v-model="domain" class="domain-input">
+      <input
+          id="domainInput"
+          type="text"
+          v-model="domain"
+          :class="{'collapsed-input': domainConfirmed, 'blurred': domainConfirmed && !domainVisible}"
+          @input="confirmInput('domain', $event.target.value)"
+          @click="domainVisible = true"
+          @blur="domainVisible = false"
+          class="domain-input"
+      >
     </div>
 
     <div>
       <label for="salesOrderSelect">Select a Sales Order:</label>
-      <select id="salesOrderSelect" v-model="selectedOrder" @change="fetchSelectedSalesOrder($event.target.value)">
+      <select id="salesOrderSelect" v-model="selectedOrder">
         <option v-for="order in salesOrders" :key="order.id" :value="order.id">{{ order.commission }} (ID: {{ order.id }})</option>
       </select>
+
     </div>
     <div>
       <label for="orderItemSelect">Select an Order Item:</label>
@@ -75,7 +94,7 @@
 </template>
 
 <script>
-import {ref, watch} from 'vue';
+import {reactive, ref, watch} from 'vue';
 import * as XLSX from 'xlsx';
 import axios, {post} from "axios";
 import async from "async";
@@ -117,6 +136,11 @@ export default {
     const message = ref('');
     const apiKey = ref(localStorage.getItem('apiKey') || '');
     const domain = ref(localStorage.getItem('domain') || '');
+    const apiKeyConfirmed = ref(!!apiKey.value);  // Bestätigung basierend auf dem Vorhandensein eines Wertes
+    const domainConfirmed = ref(!!domain.value);
+    const apiKeyVisible = ref(false); // Dieses Ref wird bestimmen, ob das apiKey-Feld unscharf ist oder nicht.
+    const domainVisible = ref(false); // Gleiches für das domain-Feld.
+
 
 
 
@@ -211,7 +235,6 @@ export default {
             tasks: item.tasks.map(task => task.id),
           }));
           console.log('Extracted task ids: ', orderItems.value);
-          data.value = [result];
         } else {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -335,13 +358,13 @@ export default {
       }
     });
 
-    watch(selectedOrder, (newVal) => {
+    watch(selectedOrder, async (newVal) => {
       if (newVal) {
-        const selectedOrder = salesOrders.value.find(order => order.id === newVal);
-        console.log(`Selected order ID: ${selectedOrder.id}, commission: ${selectedOrder.commission}`);
+        console.log(`Selected order ID: ${newVal}`);
+        await fetchSelectedSalesOrder(newVal);
       }
-      console.log('Selected order: ', newVal);
-    });
+    }, { immediate: false });
+
 
     watch(selectedOrderItem, (newVal) => {
       if (newVal) {
@@ -376,6 +399,23 @@ export default {
       localStorage.setItem('domain', newDomain);
     });
 
+    // State für Eingabebestätigung
+    const confirmInput = (field, value) => {
+      if (field === 'apiKey') {
+        apiKeyConfirmed.value = !!value.trim();
+      } else if (field === 'domain') {
+        domainConfirmed.value = !!value.trim();
+      }
+    };
+
+    const toggleBlur = (field) => {
+      if (field === 'apiKey') {
+        apiKeyVisible.value = !apiKeyVisible.value;
+      } else if (field === 'domain') {
+        domainVisible.value = !domainVisible.value;
+      }
+    };
+
     return {
       file,
       apiKey,
@@ -390,7 +430,13 @@ export default {
       selectedOrder,
       selectedOrderItem,
       domain,
+      apiKeyConfirmed,
+      domainConfirmed,
+      apiKeyVisible,
+      domainVisible,
       handleFileUpload,
+      confirmInput,
+      toggleBlur,
       readData,
       fetchSalesOrders,
       fetchSelectedSalesOrder,
@@ -541,8 +587,18 @@ tbody tr:hover {
   background-color: #FA8C47;
 }
 
+.collapsed-input {
+  height: 30px; /* Reduzierte Höhe für einklappende Wirkung */
+  transition: height 0.3s, padding 0.3s; /* Animation für Höhen- und Padding-Übergänge */
+  padding: 5px; /* Reduziertes Padding */
+  overflow: hidden; /* Verhindert Überlauf des Inhalts */
+}
 
-
+.blurred{
+  transition: filter 0.5s ease; /* Add a transition to the filter property */
+  filter: blur(3px); /* Erhöht die Unschärfe für den Text */
+  user-select: none;
+}
 
 
 /* When a file is selected, use JavaScript to change the content of the pseudo-element or the text of the separate element */
