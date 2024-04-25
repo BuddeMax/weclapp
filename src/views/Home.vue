@@ -27,7 +27,9 @@
     <div>
       <label for="taskSelect">Select a Task:</label>
       <select id="taskSelect" v-model="selectedTask">
-        <option v-for="task in currentTasks" :key="task" :value="task">{{ task }}</option>
+        <option v-for="task in currentTaskAndSubject" :key="task.taskId" :value="task.taskId">
+          {{ task.subject }} (ID: {{ task.taskId }})
+        </option>
       </select>
     </div>
     <div>
@@ -76,6 +78,7 @@
 import {ref, watch} from 'vue';
 import * as XLSX from 'xlsx';
 import axios, {post} from "axios";
+import async from "async";
 
 
 export default {
@@ -107,6 +110,7 @@ export default {
     const selectedOrderItem = ref(null);
     const tasks = ref([]);
     const currentTasks = ref([]);  // Hält die Tasks, die zum ausgewählten Order Item gehören
+    const currentTaskAndSubject = ref([]);
     const selectedTask = ref(null);
     const users = ref([]);
     const selectedUser = ref(null);
@@ -216,6 +220,31 @@ export default {
       }
     };
 
+    const fetchTaskAndSubject = async (taskId, retries = 3) => {
+      const url = `https://${domain.value}.weclapp.com/webapp/api/v1/task/id/${taskId}`;
+      try {
+        const response = await axios.get(url, {
+          headers: {
+            "Accept": "application/json",
+            "AuthenticationToken": apiKey.value
+          }
+        });
+        const taskData = response.data;
+        currentTaskAndSubject.value.push({
+          taskId: taskData.id,
+          subject: taskData.subject,
+        });
+      } catch (error) {
+        if (retries > 0 && (error.message.includes("Network Error") || (error.response && error.response.status === 0))) {
+          console.error('Netzwerkfehler erkannt, versuche erneut...');
+          setTimeout(() => fetchTaskAndSubject(taskId, retries - 1), 1000);
+        } else {
+          console.error('Fehler beim Abrufen der Task- und Subject-Daten:', error);
+        }
+      }
+    };
+
+
     const fetchUsers = async () => {
 
       const myHeaders = new Headers();
@@ -319,8 +348,15 @@ export default {
         const selectedItem = orderItems.value.find(item => item.id === newVal);
         if (selectedItem && selectedItem.tasks) {
           currentTasks.value = selectedItem.tasks;
+          console.log('Tasks geladen: ', currentTasks.value);
+          currentTaskAndSubject.value = []; // Zurücksetzen vor dem Hinzufügen neuer Daten
+          selectedItem.tasks.forEach(taskId => {
+            fetchTaskAndSubject(taskId);
+          });
+          console.log('Tasks und Subjects geladen: ', currentTaskAndSubject.value);
         } else {
           currentTasks.value = [];
+          currentTaskAndSubject.value = []; // Keine Tasks vorhanden, zurücksetzen der Daten
         }
       }
     });
@@ -361,7 +397,9 @@ export default {
       fetchData,
       postTimeRecord,
       fetchUsers,
-      postAllTimeRecords
+      postAllTimeRecords,
+      currentTaskAndSubject,
+      fetchTaskAndSubject
     };
   }
 }
