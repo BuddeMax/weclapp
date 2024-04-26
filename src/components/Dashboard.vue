@@ -73,6 +73,9 @@
         {{ issue }}
       </div>
     </div>
+    <div class="finish-dashboard" v-if="postConfirmed">
+      <h2>Post Erfolgreich</h2>
+    </div>
     <div>
       <h2>Data:</h2>
       <table>
@@ -144,6 +147,7 @@ export default {
     const apiKeyVisible = ref(false); // Dieses Ref wird bestimmen, ob das apiKey-Feld unscharf ist oder nicht.
     const domainVisible = ref(false); // Gleiches für das domain-Feld.
     const issues = ref([]);
+    const postConfirmed = ref(false);
 
 
 
@@ -277,6 +281,9 @@ export default {
       const myHeaders = new Headers();
       myHeaders.append("Accept", "application/json");
       myHeaders.append("AuthenticationToken", apiKey.value);
+      myHeaders.append("Access-Control-Request-Method", "GET");
+      myHeaders.append("Access-Control-Request-Headers", "AuthenticationToken, Content-Type");
+      myHeaders.append("Origin", `https://${domain.value}.weclapp.com`);
 
 
       const requestOptions = {
@@ -363,6 +370,10 @@ export default {
       myHeaders.append("Content-Type", "application/json");
       myHeaders.append("AuthenticationToken", apiKey.value);
       myHeaders.append("Cookie", "_sid_=19");
+      myHeaders.append("Access-Control-Request-Method", "GET");
+      myHeaders.append("Access-Control-Request-Headers", "AuthenticationToken, Content-Type");
+      myHeaders.append("Origin", `https://${domain.value}.weclapp.com`);
+
 
       const requestOptions = {
         method: "GET",
@@ -420,6 +431,10 @@ export default {
               issues.value.push(message);
             }
           });
+        }
+        else if (response.status === 201) {
+          postConfirmed.value = true;
+          console.log('Time record posted successfully:', result);
         }
       } catch (error) {
         console.error('Error posting time record:', error);
@@ -534,6 +549,7 @@ export default {
       editedData,
       currentTaskAndSubject,
       issues,
+      postConfirmed,
       handleFileUpload,
       confirmInput,
       toggleBlur,
@@ -702,6 +718,17 @@ tbody tr:hover {
 .error-dashboard {
   background-color: #f8d7da; /* Sanftes Rot als Hintergrundfarbe */
   border: 2px solid #f5c6cb; /* Zartere rote Umrandung */
+  border-radius: 15px; /* Abgerundete Ecken */
+  padding: 20px;
+  max-width: 600px;
+  margin: 20px auto;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1); /* Stärkerer Schatten für mehr Tiefe */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modernere Schriftart */
+}
+
+.finish-dashboard{
+  background-color: #90EE90; /* Leichtes Grün als Hintergrundfarbe */
+  border: 2px solid #32CD32; /* Dunkleres Grün als Rahmenfarbe */
   border-radius: 15px; /* Abgerundete Ecken */
   padding: 20px;
   max-width: 600px;
