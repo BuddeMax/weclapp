@@ -67,7 +67,7 @@
     <div>
       <button @click="postAllTimeRecords">Post Time Record</button>
     </div>
-    <div class="error-dashboard" v-if="issues.length > 0">
+    <div class="error-dashboard" v-if="issues.length > 0" @click="clearIssues">
       <h2>Fehler Dashboard</h2>
       <div v-for="(issue, index) in issues" :key="index">
         {{ issue }}
@@ -121,9 +121,11 @@ export default {
         fileNameLabel.textContent = 'No file chosen...';
       }
     },
-    logStoreState() {
-      console.log(store.state);
-    }
+    clearIssues() {
+      console.log('clearIssues called, current issues:', this.issues);
+      this.issues = [];
+      console.log('issues after clearing:', this.issues);
+    },
   },
   setup() {
     const file = ref(null);
