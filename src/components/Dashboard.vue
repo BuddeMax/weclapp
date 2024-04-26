@@ -277,14 +277,13 @@ export default {
 
 
 
-    const fetchSalesOrders = async () => {
+    const fetchSalesOrders = async (retries = 3) => {
       const myHeaders = new Headers();
       myHeaders.append("Accept", "application/json");
       myHeaders.append("AuthenticationToken", apiKey.value);
       myHeaders.append("Access-Control-Request-Method", "GET");
       myHeaders.append("Access-Control-Request-Headers", "AuthenticationToken, Content-Type");
       myHeaders.append("Origin", `https://${domain.value}.weclapp.com`);
-
 
       const requestOptions = {
         method: "GET",
@@ -293,21 +292,24 @@ export default {
       };
 
       try {
-        // Verwenden Sie den Proxy-Pfad anstelle der vollständigen URL
         const response = await fetch(`https://${domain.value}.weclapp.com/webapp/api/v1/salesOrder`, requestOptions);
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const result = await response.json();
-        if (response.ok) {
-          salesOrders.value = result.result.map(order => ({
-            id: order.id,
-            commission: order.commission
-          }));
+        salesOrders.value = result.result.map(order => ({
+          id: order.id,
+          commission: order.commission
+        }));
+        console.log('Verkaufsaufträge erfolgreich geladen');
+      } catch (error) {
+        if (retries > 0 && (error.message.includes('Failed to fetch') || error.message.includes('Network Error') || (error.response && error.response.status === 0))) {
+          console.error('Netzwerk- oder CORS-Fehler erkannt, versuche erneut...');
+          setTimeout(() => fetchSalesOrders(retries - 1), 1000);
         } else {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          console.error('Fehler beim Abrufen der Verkaufsaufträge:', error);
         }
-      } catch (e) {
-        console.error("Error fetching sales orders: ", e);
       }
     };
+
 
 
     const fetchSelectedSalesOrder = async (selectedValue) => {
@@ -363,8 +365,7 @@ export default {
     };
 
 
-    const fetchUsers = async () => {
-
+    const fetchUsers = async (retries = 3) => {
       const myHeaders = new Headers();
       myHeaders.append("Accept", "application/json");
       myHeaders.append("Content-Type", "application/json");
@@ -374,27 +375,29 @@ export default {
       myHeaders.append("Access-Control-Request-Headers", "AuthenticationToken, Content-Type");
       myHeaders.append("Origin", `https://${domain.value}.weclapp.com`);
 
-
       const requestOptions = {
         method: "GET",
         headers: myHeaders,
         redirect: "follow"
       };
 
-      fetch(`https://${domain.value}.weclapp.com/webapp/api/v1/user`, requestOptions)
-          .then((response) => response.text())
-          //speichere die antowrt in result
-          .then((result) => {
-            //parse die antwort in ein json objekt
-            const parsedResult = JSON.parse(result);
-            //speichere das result in users
-            users.value = parsedResult.result;
-          })
-          .then((result) => console.log(result))
-          .catch((error) => console.error(error));
-
-
+      try {
+        const response = await fetch(`https://${domain.value}.weclapp.com/webapp/api/v1/user`, requestOptions);
+        if (!response.ok) throw new Error('Response not okay');
+        const result = await response.text();
+        const parsedResult = JSON.parse(result);
+        users.value = parsedResult.result;
+        console.log('User-Daten erfolgreich geladen');
+      } catch (error) {
+        if (retries > 0 && (error.message.includes('Failed to fetch') || error.message.includes('Network Error') || (error.response && error.response.status === 0))) {
+          console.error('Netzwerk- oder CORS-Fehler erkannt, versuche erneut...');
+          setTimeout(() => fetchUsers(retries - 1), 1000);
+        } else {
+          console.error('Fehler beim Abrufen der Benutzerdaten:', error);
+        }
+      }
     };
+
 
     const postTimeRecord = async (item) => {
       const myHeaders = new Headers({
