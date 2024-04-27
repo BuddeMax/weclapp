@@ -430,12 +430,18 @@ export default {
         const result = await response.json();
         if (!response.ok && response.status === 400) {
           // add to issue
-          const messages = result.messages.map(message => message.message);
-          messages.forEach(message => {
-            if (!issues.value.some(issue => issue === message)) {
-              issues.value.push(message);
+          if (result.messages) {
+            const messages = result.messages.map(message => message.message);
+            messages.forEach(message => {
+              if (!issues.value.some(issue => issue === message)) {
+                issues.value.push(message);
+              }
+            });
+          } else if (result.error) {
+            if (!issues.value.some(issue => issue === result.error)) {
+              issues.value.push(result.error);
             }
-          });
+          }
         }
         else if (response.status === 201) {
           postConfirmed.value = true;
