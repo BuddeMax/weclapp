@@ -83,7 +83,7 @@
         <tr>
           <th>Startdatum</th>
           <th>Zeit</th>
-          <th>Beschreibung</th>
+          <th v-if="hasDescription">Beschreibung</th>
           <th>Dauer in Stunden</th>
           <th>Ort</th>
         </tr>
@@ -92,7 +92,7 @@
         <tr v-for="(item, index) in data" :key="index">
           <td>{{ item.date }}</td>
           <td>{{ item.timestamp }}</td>
-          <td>{{ item.description }}</td>
+          <td v-if="hasDescription">{{ item.description || ' ' }}</td> <!-- Anzeige von leeren Zellen wenn keine Beschreibung -->
           <td>{{ item.duration }}</td>
           <td>{{ item.placeOfService }}</td>
         </tr>
@@ -150,6 +150,7 @@ export default {
     const domainVisible = ref(false); // Gleiches für das domain-Feld.
     const issues = ref([]);
     const postConfirmed = ref(false);
+    const hasDescription = ref(false); // Updated to use a boolean
 
 
 
@@ -180,6 +181,7 @@ export default {
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { range }).map(item => {
           // Überprüfen, ob das Zeitfeld und das Feld "Dauer in Stunden" nicht leer sind
           if (!isNaN(item.Zeit) && !isNaN(item['Dauer in Stunden'])) {
+
             return {
               date: convertExcelDateToJSDate(item.Datum),
               timestamp: convertExcelTimeToReadableTime(item.Zeit),
@@ -189,6 +191,7 @@ export default {
             };
           }
         }).filter(item => item !== undefined); // Entfernen von undefinierten Einträgen
+        hasDescription.value = jsonData.some(item => item.description); // Überprüfen, ob irgendein Element eine Beschreibung hat
 
         data.value = jsonData;
         console.log('Data read: ', data.value);
@@ -562,6 +565,7 @@ export default {
       currentTaskAndSubject,
       issues,
       postConfirmed,
+      hasDescription,
       handleFileUpload,
       confirmInput,
       toggleBlur,
