@@ -415,7 +415,8 @@ export default {
         "durationSeconds": item.duration,
         "startDate": item.startDate,
         "taskId": selectedTask.value,
-        "userId": selectedUser.value
+        "userId": selectedUser.value,
+        "placeOfServiceId": item.placeOfServiceId
       });
 
       const requestOptions = {
