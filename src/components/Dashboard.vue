@@ -29,13 +29,17 @@
           class="domain-input"
       >
     </div>
-
+    <div>
+      <label for="customerSelect">Select a Customer:</label>
+      <select id="customerSelect" v-model="selectedCustomer">
+        <option v-for="customer in customers" :key="customer.id" :value="customer.id">{{ customer.company }} (ID: {{ customer.id }})</option>
+      </select>
+    </div>
     <div>
       <label for="salesOrderSelect">Select a Sales Order:</label>
       <select id="salesOrderSelect" v-model="selectedOrder">
         <option v-for="order in salesOrders" :key="order.id" :value="order.id">{{ order.commission }} (ID: {{ order.id }})</option>
       </select>
-
     </div>
     <div>
       <label for="orderItemSelect">Select an Order Item:</label>
@@ -151,6 +155,8 @@ export default {
     const issues = ref([]);
     const postConfirmed = ref(false);
     const hasDescription = ref(false); // Updated to use a boolean
+    const customers = ref([]);
+    const selectedCustomer = ref(null);
 
 
 
@@ -263,7 +269,7 @@ export default {
         duration: convertDurationToUnixTimestamp(item.duration),
         billableDuration: convertDurationToUnixTimestamp(item.duration),
         // wenn in der Zeile remote steht dann 6240, wenn Vor Ort beim Kunden dann 13360
-        placeOfServiceId: item.placeOfService === 'Remote' ? 6240 : 13360,
+        //placeOfServiceId: item.placeOfService === 'Remote' ? 6240 : 13360,
         description: item.description,
         taskId: selectedTask.value,
         userId: selectedUser.value,
@@ -274,6 +280,37 @@ export default {
 
       console.log('Converted data: ', editedData.value);
     };
+
+    const fetchCustomer = async (retries = 3) => {
+      const myHeaders = new Headers();
+      myHeaders.append("Accept", "application/json");
+      myHeaders.append("AuthenticationToken", apiKey.value);
+      myHeaders.append("Access-Control-Request-Method", "GET");
+      myHeaders.append("Access-Control-Request-Headers", "AuthenticationToken, Content-Type");
+      myHeaders.append("Origin", `https://${domain.value}.weclapp.com`);
+
+      const requestOptions = {
+        method: "GET",
+        headers: myHeaders,
+        redirect: "follow"
+      };
+
+      try {
+        const response = await fetch(`https://${domain.value}.weclapp.com/webapp/api/v1/customer?properties=id,company`, requestOptions);
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        const result = await response.text();
+        const parsedResult = JSON.parse(result);
+        customers.value = parsedResult.result;
+        console.log('Customer data loaded successfully');
+      } catch (error) {
+        if (retries > 0 && (error.message.includes('Failed to fetch') || error.message.includes('Network Error') || (error.response && error.response.status === 0))) {
+          console.error('Netzwerk- oder CORS-Fehler erkannt, versuche erneut...');
+          setTimeout(() => fetchCustomer(retries - 1), 1000);
+        } else {
+          console.error('Error fetching customer data:', error);
+        }
+      }
+    }
 
 
 
@@ -297,7 +334,7 @@ export default {
       };
 
       try {
-        const response = await fetch(`https://${domain.value}.weclapp.com/webapp/api/v1/salesOrder`, requestOptions);
+        const response = await fetch(`https://${domain.value}.weclapp.com/webapp/api/v1/salesOrder?properties=id,commission&customerId-eq="${selectedCustomer.value}"`, requestOptions);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const result = await response.json();
         salesOrders.value = result.result.map(order => ({
@@ -320,7 +357,7 @@ export default {
     const fetchSelectedSalesOrder = async (selectedValue) => {
       console.log('fetchSelectedSalesOrder called with: ', selectedValue);
       if (!selectedValue) return;
-      const url = `https://${domain.value}.weclapp.com/webapp/api/v1/salesOrder/id/${selectedValue}`;
+      const url = `https://${domain.value}.weclapp.com/webapp/api/v1/salesOrder?id-eq="${selectedValue}"&properties=id,orderItems.id,orderItems.title,orderItems.tasks.id`;
       try {
         const response = await fetch(url, {
           method: 'GET',
@@ -331,12 +368,18 @@ export default {
         });
         const result = await response.json();
         if (response.ok) {
-          orderItems.value = result.orderItems.map(item => ({
-            id: item.id,
-            title: item.title,
-            tasks: item.tasks.map(task => task.id),
-          }));
-          console.log('Extracted task ids: ', orderItems.value);
+          // Ensure you are accessing the first element of the result array
+          if (result.result && result.result.length > 0) {
+            const orderData = result.result[0]; // Access the first element of result
+            orderItems.value = orderData.orderItems.map(item => ({
+              id: item.id,
+              title: item.title,
+              tasks: item.tasks.map(task => task.id),
+            }));
+            console.log('Extracted task ids: ', orderItems.value);
+          } else {
+            console.log('No data found for the given id.');
+          }
         } else {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -346,7 +389,7 @@ export default {
     };
 
     const fetchTaskAndSubject = async (taskId, retries = 3) => {
-      const url = `https://${domain.value}.weclapp.com/webapp/api/v1/task/id/${taskId}`;
+      const url = `https://${domain.value}.weclapp.com/webapp/api/v1/task?id-eq=${taskId}&properties=id,subject`;
       try {
         const response = await axios.get(url, {
           headers: {
@@ -354,11 +397,16 @@ export default {
             "AuthenticationToken": apiKey.value
           }
         });
-        const taskData = response.data;
-        currentTaskAndSubject.value.push({
-          taskId: taskData.id,
-          subject: taskData.subject,
-        });
+        const tasks = response.data.result;  // Verwenden von 'result' aus dem neuen Antwortformat
+        if (tasks.length > 0) {
+          const taskData = tasks[0];  // Nehmen das erste Task, da 'id-eq' verwendet wird und somit nur ein Ergebnis erwartet wird
+          currentTaskAndSubject.value.push({
+            taskId: taskData.id,
+            subject: taskData.subject,
+          });
+        } else {
+          console.error('Keine Aufgaben gefunden.');
+        }
       } catch (error) {
         if (retries > 0 && (error.message.includes("Network Error") || (error.response && error.response.status === 0))) {
           console.error('Netzwerkfehler erkannt, versuche erneut...');
@@ -368,6 +416,7 @@ export default {
         }
       }
     };
+
 
 
     const fetchUsers = async (retries = 3) => {
@@ -471,10 +520,19 @@ export default {
 
 
     const fetchData = () => {
-      fetchSalesOrders();
+      fetchCustomer();
       fetchUsers();
     };
 
+    watch(selectedCustomer, async (newVal) => {
+      if (newVal) {
+        console.log(`Selected customer ID: ${newVal}`);
+        selectedCustomer.value = newVal;
+        console.log('Selected customer: ', selectedCustomer.value);
+        await fetchCustomer(newVal);
+        fetchSalesOrders();
+      }
+    }, { immediate: false });
 
 
     watch(selectedUser, (newVal) => {
@@ -566,6 +624,8 @@ export default {
       issues,
       postConfirmed,
       hasDescription,
+      customers,
+      selectedCustomer,
       handleFileUpload,
       confirmInput,
       toggleBlur,
@@ -577,6 +637,7 @@ export default {
       fetchUsers,
       postAllTimeRecords,
       fetchTaskAndSubject,
+      fetchCustomer
     };
   }
 }
