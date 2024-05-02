@@ -157,6 +157,8 @@ export default {
     const hasDescription = ref(false); // Updated to use a boolean
     const customers = ref([]);
     const selectedCustomer = ref(null);
+    const moment = require('moment-timezone');
+
 
 
 
@@ -207,20 +209,23 @@ export default {
     };
 
     function convertExcelDateToJSDate(excelDate) {
-      // Excel-Datumszahlen beginnen am 1. Januar 1900. Der Tag 1 ist der 1. Januar 1900
-      const date = new Date(Date.UTC(1899, 11, 31));
+      // Basisdatum für Excel ist der 30. Dezember 1899
+      const baseDate = new Date(1899, 11, 30); // Jahr, Monat (0-basiert), Tag
 
-      // Hinzufügen der ganzzahligen Tage zum Startdatum
-      const days = Math.floor(excelDate);
-      date.setDate(date.getDate() + days);
+      // Das Excel-Datum in Tage umrechnen
+      const date = new Date(baseDate.getTime() + (excelDate * 24 * 60 * 60 * 1000));
 
-      // Rückgabe des Datums im lokalen Format ohne Zeitkomponente
-      return date.toLocaleDateString('de-DE');
+      // Extraktion von Tag, Monat und Jahr
+      const day = date.getDate();
+      const month = date.getMonth() + 1; // Monate sind 0-basiert, daher +1
+      const year = date.getFullYear();
+
+      // Formatierung des Datums in 'dd.mm.jjjj'
+      const formattedDate = `${day.toString().padStart(2, '0')}.${month.toString().padStart(2, '0')}.${year}`;
+      return formattedDate;
     }
 
     function convertExcelTimeToReadableTime(excelTime) {
-
-
       // Berechnung der Stunden, Minuten und Sekunden aus dem seriellen Wert
       var fractional_day = excelTime - Math.floor(excelTime) + 0.0000001;
       var total_seconds = Math.floor(86400 * fractional_day);
@@ -243,7 +248,13 @@ export default {
       return totalSeconds;
     }
 
+
     function excelDateToUnixTime(excelDate) {
+      // Überprüfen, ob das Eingabedatum ein gültiges Format hat
+      if (!/^\d{2}\.\d{2}\.\d{4}$/.test(excelDate)) {
+        throw new Error("Invalid date format. Please use dd.mm.yyyy format.");
+      }
+
       // Split the Excel date string into day, month, and year components
       const dateComponents = excelDate.split('.');
 
@@ -253,30 +264,54 @@ export default {
       const year = parseInt(dateComponents[2], 10);
 
       // Create a JavaScript Date object from the parsed components
-      const jsDate = new Date(year, month - 1, day); // Note: Month in JavaScript Date object is 0-indexed
+      const jsDate = new Date(year, month - 1, day);
 
-      // Get the Unix time (in milliseconds) from the JavaScript Date object
+      // JavaScript behandelt Datum und Uhrzeit gemäß lokaler Zeitzone. Um den Unix-Timestamp zu erhalten,
+      // der die Anzahl der Millisekunden seit dem 1. Januar 1970 00:00:00 UTC darstellt,
+      // sollten wir sicherstellen, dass das Datum korrekt in UTC interpretiert wird.
       const unixTimeInMilliseconds = jsDate.getTime();
 
-      return unixTimeInMilliseconds;
+      return unixTimeInMilliseconds; // oder return unixTimeInMilliseconds; für Millisekunden
+    }
+
+    function getUnixTimestamp(date, time) {
+      // Kombinieren Sie Datum und Uhrzeit in einem String
+      const dateTimeString = `${date} ${time}`;
+
+      // Definieren Sie das Format des Datums und der Uhrzeit
+      const format = "DD.MM.YYYY HH:mm:ss";
+
+      // Erstellen Sie ein Date-Objekt mit der Zeitzone "Europe/Berlin"
+      const dateTime = moment.tz(dateTimeString, format, "Europe/Berlin");
+
+      // Umwandeln in Unix Timestamp (Anzahl der Sekunden seit dem 1. Januar 1970)
+      return dateTime.unix()*1000;
     }
 
 
     const convertData = () => {
       // Konvertieren der Daten
+
       const convertedData = data.value.map(item => ({
-        startDate: excelDateToUnixTime(item.date) + convertDurationToUnixTimestamp(item.timestamp),
+        startDate: getUnixTimestamp(item.date, item.timestamp),
         duration: convertDurationToUnixTimestamp(item.duration),
         billableDuration: convertDurationToUnixTimestamp(item.duration),
         // wenn in der Zeile remote steht dann 6240, wenn Vor Ort beim Kunden dann 13360
-        //placeOfServiceId: item.placeOfService === 'Remote' ? 6240 : 13360,
+        placeOfServiceId: item.placeOfService === 'Remote' ? 6240 : 13360,
         description: item.description,
         taskId: selectedTask.value,
         userId: selectedUser.value,
+        testDate: excelDateToUnixTime(item.date),
+        testTime: convertDurationToUnixTimestamp(item.timestamp)
       }));
 
       // Speichern der konvertierten Daten in editedData
       editedData.value = convertedData;
+      console.log(editedData.value.startDate);
+      console.log(editedData.duration);
+      console.log(editedData.testDate);
+      console.log(editedData.testTime);
+
 
       console.log('Converted data: ', editedData.value);
     };
