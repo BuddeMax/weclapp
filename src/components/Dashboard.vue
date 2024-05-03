@@ -2,7 +2,11 @@
   <div class="container">
     <h1>Weclapp Time Track</h1>
 
-    <button @click="fetchData">Fetch Data</button>
+    <button @click="fetchData">
+      <!-- Hier ändern wir den Text oder das Icon, basierend auf dem Status von dataLoaded -->
+      <span v-if="dataLoaded">&#10004; Daten geladen</span>
+      <span v-else>Daten laden</span>
+    </button>
     <div>
       <label for="apiKeyInput">API Key:</label>
       <input
@@ -30,25 +34,25 @@
       >
     </div>
     <div>
-      <label for="customerSelect">Select a Customer:</label>
+      <label for="customerSelect">Wähle einen Kunden:</label>
       <select id="customerSelect" v-model="selectedCustomer">
         <option v-for="customer in customers" :key="customer.id" :value="customer.id">{{ customer.company }} (ID: {{ customer.id }})</option>
       </select>
     </div>
     <div>
-      <label for="salesOrderSelect">Select a Sales Order:</label>
+      <label for="salesOrderSelect">Wähle einen Auftrag:</label>
       <select id="salesOrderSelect" v-model="selectedOrder">
         <option v-for="order in salesOrders" :key="order.id" :value="order.id">{{ order.commission }} (ID: {{ order.id }})</option>
       </select>
     </div>
     <div>
-      <label for="orderItemSelect">Select an Order Item:</label>
+      <label for="orderItemSelect">Wähle ein Service:</label>
       <select id="orderItemSelect" v-model="selectedOrderItem">
         <option v-for="item in orderItems" :key="item.id" :value="item.id">{{ item.title }} (ID: {{ item.id }})</option>
       </select>
     </div>
     <div>
-      <label for="taskSelect">Select a Task:</label>
+      <label for="taskSelect">Wähle eine Aufgabe:</label>
       <select id="taskSelect" v-model="selectedTask">
         <option v-for="task in currentTaskAndSubject" :key="task.taskId" :value="task.taskId">
           {{ task.subject }} (ID: {{ task.taskId }})
@@ -56,20 +60,26 @@
       </select>
     </div>
     <div>
-      <label for="userSelect">Select a User:</label>
+      <label for="userSelect">Wähle einen User:</label>
       <select id="userSelect" v-model="selectedUser">
         <option v-for="user in users" :key="user.id" :value="user.id">{{ user.firstName }} {{ user.lastName }} ({{ user.email }})</option>
       </select>
     </div>
     <div class="file-input">
       <input type="file" id="file" @change="handleFileUpload" accept=".xlsx,.xls,.csv">
-      <label for="file">Upload File</label>
+      <label for="file">
+        <span v-if="fileUploaded">&#10004; Datei hochgeladen</span>
+        <span v-else>Datei hochladen</span>
+      </label>
     </div>
     <div>
-      <button @click="readData">Read Data</button>
+      <button @click="readData">
+        <span v-if="dataRead">&#10004; Daten gelesen</span>
+        <span v-else>Datei lesen</span>
+      </button>
     </div>
     <div>
-      <button @click="postAllTimeRecords">Post Time Record</button>
+      <button @click="postAllTimeRecords">Zeiten buchen</button>
     </div>
     <div class="error-dashboard" v-if="issues.length > 0" @click="clearIssues">
       <h2>Fehler Dashboard</h2>
@@ -158,6 +168,9 @@ export default {
     const customers = ref([]);
     const selectedCustomer = ref(null);
     const moment = require('moment-timezone');
+    const dataLoaded = ref(false);
+    const fileUploaded = ref(false);
+    const dataRead = ref(false);
 
 
 
@@ -166,65 +179,48 @@ export default {
 
     const handleFileUpload = event => {
       file.value = event.target.files[0];
+      fileUploaded.value = true;
     };
 
 
-    async function readData() {
+    const readData = () => {
       if (!file.value) {
         message.value = 'Keine Datei ausgewählt.';
         return;
       }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const ab = e.target.result;
+        const wb = XLSX.read(ab, { type: 'array' });
+        const sheetName = wb.SheetNames[0];
+        const worksheet = wb.Sheets[sheetName];
 
-      try {
-        const ab = await readFile(file.value);
-        const jsonData = processExcelData(ab);
+        // Festlegen des Bereichs zum Ignorieren der ersten vier Zeilen und Starten bei der fünften Zeile
+        const range = XLSX.utils.decode_range(worksheet['!ref']);
+        range.s.r = 4; // Start ab der fünften Zeile
 
-        if (!jsonData.length) {
-          message.value = 'Keine gültigen Daten gefunden.';
-          return;
-        }
+        // Konvertieren der Daten zu JSON, wobei der modifizierte Bereich genutzt wird
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { range }).map(item => {
+          // Überprüfen, ob das Zeitfeld und das Feld "Dauer in Stunden" nicht leer sind
+          if (!isNaN(item.Zeit) && !isNaN(item['Dauer in Stunden'])) {
+
+            return {
+              date: convertExcelDateToJSDate(item.Datum),
+              timestamp: convertExcelTimeToReadableTime(item.Zeit),
+              description: item.Beschreibung,
+              duration: convertExcelTimeToReadableTime(item['Dauer in Stunden']), // Umwandlung von Stunden in Sekunden
+              placeOfService: item['Ort']
+            };
+          }
+        }).filter(item => item !== undefined); // Entfernen von undefinierten Einträgen
+        hasDescription.value = jsonData.some(item => item.description); // Überprüfen, ob irgendein Element eine Beschreibung hat
 
         data.value = jsonData;
         console.log('Data read: ', data.value);
-        convertData();
-      } catch (error) {
-        console.error('Error reading data: ', error);
-        message.value = 'Fehler beim Lesen der Datei.';
-      }
-    }
-
-    function readFile(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = (e) => reject(e);
-        reader.readAsArrayBuffer(file);
-      });
-    }
-
-    function processExcelData(arrayBuffer) {
-      const wb = XLSX.read(arrayBuffer, { type: 'array' });
-      const sheetName = wb.SheetNames[0];
-      const worksheet = wb.Sheets[sheetName];
-      const range = XLSX.utils.decode_range(worksheet['!ref']);
-      range.s.r = 4; // Start from the fifth row
-
-      return XLSX.utils.sheet_to_json(worksheet, { range })
-          .map(item => mapToJson(item))
-          .filter(item => item !== undefined);
-    }
-
-    function mapToJson(item) {
-      if (!isNaN(item.Zeit) && !isNaN(item['Dauer in Stunden'])) {
-        return {
-          date: convertExcelDateToJSDate(item.Datum),
-          timestamp: convertExcelTimeToReadableTime(item.Zeit),
-          description: item.Beschreibung,
-          duration: convertExcelTimeToReadableTime(item['Dauer in Stunden']),
-          placeOfService: item['Ort']
-        };
-      }
-    }
+        convertData()
+      };
+      reader.readAsArrayBuffer(file.value);
+    };
 
 
     function convertExcelDateToJSDate(excelDate) {
@@ -316,7 +312,7 @@ export default {
         duration: convertDurationToUnixTimestamp(item.duration),
         billableDuration: convertDurationToUnixTimestamp(item.duration),
         // wenn in der Zeile remote steht dann 6240, wenn Vor Ort beim Kunden dann 13360
-        placeOfServiceId: item.placeOfService === 'Remote' ? 6240 : 13360,
+        placeOfServiceId: Number(item.placeOfService.split(':')[1].trim()),
         description: item.description,
         taskId: selectedTask.value,
         userId: selectedUser.value,
@@ -327,6 +323,8 @@ export default {
       editedData.value = convertedData;
 
       console.log('Converted data: ', editedData.value);
+
+      dataRead.value = true;
     };
 
     const fetchCustomer = async (retries = 3) => {
@@ -350,6 +348,9 @@ export default {
         const parsedResult = JSON.parse(result);
         customers.value = parsedResult.result;
         console.log('Customer data loaded successfully');
+        setTimeout(() => {
+          dataLoaded.value = true;
+        }, 100); // 100 Millisekunden entsprechen 0,1 Sekunden
       } catch (error) {
         if (retries > 0 && (error.message.includes('Failed to fetch') || error.message.includes('Network Error') || (error.response && error.response.status === 0))) {
           console.error('Netzwerk- oder CORS-Fehler erkannt, versuche erneut...');
@@ -570,6 +571,7 @@ export default {
     const fetchData = () => {
       fetchCustomer();
       fetchUsers();
+
     };
 
     watch(selectedCustomer, async (newVal) => {
@@ -674,6 +676,9 @@ export default {
       hasDescription,
       customers,
       selectedCustomer,
+      dataLoaded,
+      fileUploaded,
+      dataRead,
       handleFileUpload,
       confirmInput,
       toggleBlur,
