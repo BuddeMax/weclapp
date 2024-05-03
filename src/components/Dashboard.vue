@@ -169,44 +169,63 @@ export default {
     };
 
 
-    const readData = () => {
+    async function readData() {
       if (!file.value) {
         message.value = 'Keine Datei ausgewählt.';
         return;
       }
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const ab = e.target.result;
-        const wb = XLSX.read(ab, { type: 'array' });
-        const sheetName = wb.SheetNames[0];
-        const worksheet = wb.Sheets[sheetName];
 
-        // Festlegen des Bereichs zum Ignorieren der ersten vier Zeilen und Starten bei der fünften Zeile
-        const range = XLSX.utils.decode_range(worksheet['!ref']);
-        range.s.r = 4; // Start ab der fünften Zeile
+      try {
+        const ab = await readFile(file.value);
+        const jsonData = processExcelData(ab);
 
-        // Konvertieren der Daten zu JSON, wobei der modifizierte Bereich genutzt wird
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { range }).map(item => {
-          // Überprüfen, ob das Zeitfeld und das Feld "Dauer in Stunden" nicht leer sind
-          if (!isNaN(item.Zeit) && !isNaN(item['Dauer in Stunden'])) {
-
-            return {
-              date: convertExcelDateToJSDate(item.Datum),
-              timestamp: convertExcelTimeToReadableTime(item.Zeit),
-              description: item.Beschreibung,
-              duration: convertExcelTimeToReadableTime(item['Dauer in Stunden']), // Umwandlung von Stunden in Sekunden
-              placeOfService: item['Ort']
-            };
-          }
-        }).filter(item => item !== undefined); // Entfernen von undefinierten Einträgen
-        hasDescription.value = jsonData.some(item => item.description); // Überprüfen, ob irgendein Element eine Beschreibung hat
+        if (!jsonData.length) {
+          message.value = 'Keine gültigen Daten gefunden.';
+          return;
+        }
 
         data.value = jsonData;
         console.log('Data read: ', data.value);
-        convertData()
-      };
-      reader.readAsArrayBuffer(file.value);
-    };
+        convertData();
+      } catch (error) {
+        console.error('Error reading data: ', error);
+        message.value = 'Fehler beim Lesen der Datei.';
+      }
+    }
+
+    function readFile(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = (e) => reject(e);
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    function processExcelData(arrayBuffer) {
+      const wb = XLSX.read(arrayBuffer, { type: 'array' });
+      const sheetName = wb.SheetNames[0];
+      const worksheet = wb.Sheets[sheetName];
+      const range = XLSX.utils.decode_range(worksheet['!ref']);
+      range.s.r = 4; // Start from the fifth row
+
+      return XLSX.utils.sheet_to_json(worksheet, { range })
+          .map(item => mapToJson(item))
+          .filter(item => item !== undefined);
+    }
+
+    function mapToJson(item) {
+      if (!isNaN(item.Zeit) && !isNaN(item['Dauer in Stunden'])) {
+        return {
+          date: convertExcelDateToJSDate(item.Datum),
+          timestamp: convertExcelTimeToReadableTime(item.Zeit),
+          description: item.Beschreibung,
+          duration: convertExcelTimeToReadableTime(item['Dauer in Stunden']),
+          placeOfService: item['Ort']
+        };
+      }
+    }
+
 
     function convertExcelDateToJSDate(excelDate) {
       // Basisdatum für Excel ist der 30. Dezember 1899
@@ -305,13 +324,7 @@ export default {
         testTime: convertDurationToUnixTimestamp(item.timestamp)
       }));
 
-      // Speichern der konvertierten Daten in editedData
       editedData.value = convertedData;
-      console.log(editedData.value.startDate);
-      console.log(editedData.duration);
-      console.log(editedData.testDate);
-      console.log(editedData.testTime);
-
 
       console.log('Converted data: ', editedData.value);
     };
@@ -848,12 +861,6 @@ tbody tr:hover {
   box-shadow: 0 8px 16px rgba(0,0,0,0.1); /* Stärkerer Schatten für mehr Tiefe */
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modernere Schriftart */
 }
-
-
-/* When a file is selected, use JavaScript to change the content of the pseudo-element or the text of the separate element */
-
-
-
 
 @media (max-width: 768px) {
   .container {
