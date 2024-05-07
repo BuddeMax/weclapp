@@ -2,11 +2,15 @@ import { createStore } from 'vuex';
 
 export const store = createStore({
     state: {
-        errors: [],
+        domain: '', // Zustandsvariable für die Domain
+        apiKey: '', // Zustandsvariable für den API-Schlüssel
     },
     mutations: {
-        setError(state, error) {
-            state.errors.push(error);
+        setDomain(state, domain) { // Mutation zum Setzen der Domain
+            state.domain = domain;
+        },
+        setApiKey(state, apiKey) { // Mutation zum Setzen des API-Schlüssels
+            state.apiKey = apiKey;
         }
     }
 });
