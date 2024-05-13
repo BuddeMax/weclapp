@@ -93,13 +93,13 @@
         </tr>
         </thead>
         <tbody>
-        <tr v-for="(item) in data.value" :key="`${item.id}-${item.message}`" :class="{ 'success': item.message === 'Erfolgreich', 'error': item.message && item.message !== 'Erfolgreich' }">
+        <tr v-for="(item) in data.value" :key="`${item.id}-${item.message}`">
           <td>{{ item.date }}</td>
           <td>{{ item.timestamp }}</td>
           <td v-if="hasDescription">{{ item.description || ' ' }}</td>
           <td>{{ item.duration }}</td>
           <td>{{ item.placeOfService }}</td>
-          <td>{{ item.message || 'Nicht verarbeitet' }}</td>
+          <td :class="{ 'success': item.message === 'Erfolgreich', 'error': item.message && item.message !== 'Erfolgreich' }">{{ item.message || 'Nicht verarbeitet' }}</td>
         </tr>
         </tbody>
       </table>
@@ -578,10 +578,11 @@ thead {
 
 tbody tr {
   transition: background-color 0.3s;
+  background-color: #ffffff;
 }
 
 tbody tr:nth-child(even) {
-  background-color: #f0f0f0;
+  background-color: #fafafa;
 }
 
 tbody tr:hover {
@@ -634,23 +635,12 @@ tbody tr:hover {
   user-select: none;
 }
 
-.error-dashboard {
-  background-color: #f8d7da; /* Sanftes Rot als Hintergrundfarbe */
-  border: 2px solid #f5c6cb; /* Zartere rote Umrandung */
-  border-radius: 15px; /* Abgerundete Ecken */
-  padding: 20px;
-  max-width: 600px;
-  margin: 20px auto;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.1); /* Stärkerer Schatten für mehr Tiefe */
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modernere Schriftart */
-}
-
 .success {
-  background-color: #90EE90 !important;
+  background-color: #abff81 !important;
 }
 
 .error {
-  background-color: #FF6347 !important;
+  background-color: #ff8080 !important;
 }
 
 @media (max-width: 768px) {
