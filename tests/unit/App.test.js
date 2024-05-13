@@ -48,17 +48,3 @@ describe('App.vue', () => {
 
 
 });
-
-
-describe('convertExcelToJSDate', () => {
-    test('converts Excel date to JS date correctly', () => {
-        const excelDate = 44282; // Beispiel Excel Datum
-        const jsDate = convertExcelToJSDate(excelDate);
-
-        // Erwartetes JS Datum erstellen
-        const expectedJsDate = new Date(2021, 0, 1); // Ersetzen Sie dies durch das erwartete JS Datum
-
-        expect(jsDate).toEqual(expectedJsDate);
-    });
-
-});

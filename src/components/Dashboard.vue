@@ -79,15 +79,6 @@
     <div>
       <button @click="postAllTimeRecords">Zeiten buchen</button>
     </div>
-    <div class="error-dashboard" v-if="issues.length > 0" @click="clearIssues">
-      <h2>Fehler Dashboard</h2>
-      <div v-for="(issue, index) in issues" :key="index">
-        {{ issue }}
-      </div>
-    </div>
-    <div class="finish-dashboard" v-if="postConfirmed">
-      <h2>Post Erfolgreich</h2>
-    </div>
     <div>
       <h2>Data:</h2>
       <table>
@@ -102,13 +93,13 @@
         </tr>
         </thead>
         <tbody>
-        <tr v-for="(item, index) in data" :key="index">
+        <tr v-for="(item) in data.value" :key="`${item.id}-${item.message}`" :class="{ 'success': item.message === 'Erfolgreich', 'error': item.message && item.message !== 'Erfolgreich' }">
           <td>{{ item.date }}</td>
           <td>{{ item.timestamp }}</td>
           <td v-if="hasDescription">{{ item.description || ' ' }}</td>
           <td>{{ item.duration }}</td>
           <td>{{ item.placeOfService }}</td>
-          <td>{{ item.message || 'Nicht verarbeitet' }}</td> <!-- Hinzugefügt: Anzeige des aktuellen Status -->
+          <td>{{ item.message || 'Nicht verarbeitet' }}</td>
         </tr>
         </tbody>
       </table>
@@ -181,7 +172,8 @@ export default {
   },
   setup() {
     const file = ref(null);
-    const data = ref([]);
+    const data = reactive([]);
+    const reactiveData = reactive([]); // Verwenden Sie reactive anstelle von ref
     const editedData = reactive([]); // Verwenden Sie reactive anstelle von ref
     const salesOrders = ref([]);
     const selectedOrder = ref(null);
@@ -247,6 +239,7 @@ export default {
         hasDescription.value = jsonData.some(item => item.description);
 
         data.value = jsonData;
+        reactiveData.value = jsonData;
         console.log('Data read: ', data.value);
         convertData()
       };
@@ -323,26 +316,37 @@ export default {
       console.log("Beginne mit dem Posten aller Zeiteinträge");
       for (let i = 0; i < data.value.length; i++) {
         const item = data.value[i];
-        const result = await postTimeRecord({
-          startDate: getUnixTimestamp(item.date, item.timestamp),
-          duration: convertDurationToUnixTimestamp(item.duration),
-          billableDuration: convertDurationToUnixTimestamp(item.duration),
-          placeOfServiceId: Number(item.placeOfService.split(':')[1].trim()),
-          description: item.description,
-          taskId: selectedTask.value,
-          userId: selectedUser.value,
-        }, apiKey.value, domain.value);
+        try {
+          const result = await postTimeRecord({
+            startDate: getUnixTimestamp(item.date, item.timestamp),
+            duration: convertDurationToUnixTimestamp(item.duration),
+            billableDuration: convertDurationToUnixTimestamp(item.duration),
+            placeOfServiceId: Number(item.placeOfService.split(':')[1].trim()),
+            description: item.description,
+            taskId: selectedTask.value,
+            userId: selectedUser.value,
+          }, apiKey.value, domain.value);
 
-        if (!result.success) {
-          issues.value.push(...result.messages);
-          data.value[i].message = 'Fehler: ' + result.messages.join(', ');
-        } else {
-          console.log(result.messages[0]);
-          data.value[i].message = 'Erfolgreich'; // Aktualisieren Sie direkt das `data` Array
+          if (result.success) {
+            console.log('Time record posted successfully:', result.messages);
+            data.value[i].message = 'Erfolgreich';
+            console.log('Data:', data.value[i]);
+            await nextTick();
+          } else {
+            console.error('Error posting time record:', result.messages);
+            data.value[i].message = 'Fehler: ' + result.messages.join(', ');
+          }
+        } catch (error) {
+          console.error('Exception when posting time record:', error);
+          data.value[i].message = 'Ausnahme: ' + error.message;
         }
+        await nextTick();
       }
-      await nextTick(); // Stellt sicher, dass die Ansicht aktualisiert wird
+       // Stellt sicher, dass die Ansicht aktualisiert wird
     };
+
+
+
 
 
     if (Array.isArray(editedData.value)) {
@@ -641,15 +645,12 @@ tbody tr:hover {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modernere Schriftart */
 }
 
-.finish-dashboard{
-  background-color: #90EE90; /* Leichtes Grün als Hintergrundfarbe */
-  border: 2px solid #32CD32; /* Dunkleres Grün als Rahmenfarbe */
-  border-radius: 15px; /* Abgerundete Ecken */
-  padding: 20px;
-  max-width: 600px;
-  margin: 20px auto;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.1); /* Stärkerer Schatten für mehr Tiefe */
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modernere Schriftart */
+.success {
+  background-color: #90EE90 !important;
+}
+
+.error {
+  background-color: #FF6347 !important;
 }
 
 @media (max-width: 768px) {
