@@ -24,12 +24,20 @@ export function convertExcelTimeToReadableTime(excelTime) {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
+
 export function convertDurationToUnixTimestamp(duration) {
     const [hours, minutes] = duration.split(':').map(Number);
+
+    // Überprüfen, ob die Stunden und Minuten innerhalb eines gültigen Bereichs liegen
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+        return NaN;
+    }
+
     const totalMinutes = hours * 60 + minutes;
     const totalSeconds = totalMinutes * 60;
     return totalSeconds;
 }
+
 
 export function excelDateToUnixTime(excelDate) {
     if (!/^\d{2}\.\d{2}\.\d{4}$/.test(excelDate)) {
@@ -49,11 +57,16 @@ export function excelDateToUnixTime(excelDate) {
     return unixTimeInMilliseconds;
 }
 
-export
-function getUnixTimestamp(date, time) {
+export function getUnixTimestamp(date, time) {
     const dateTimeString = `${date} ${time}`;
     const format = "DD.MM.YYYY HH:mm:ss";
     const dateTime = moment.tz(dateTimeString, format, "Europe/Berlin");
-    return dateTime.unix()*1000;
+
+    if (!dateTime.isValid()) {
+        throw new Error("Invalid date or time format.");
+    }
+
+    return dateTime.unix() * 1000;
 }
+
 

@@ -1,7 +1,5 @@
 import { mount } from '@vue/test-utils';
 import App from '@/App.vue';
-import {nextTick} from "vue";
-import { convertExcelToJSDate } from '@/components/Dashboard.vue';
 
 describe('App.vue', () => {
     let wrapper;
