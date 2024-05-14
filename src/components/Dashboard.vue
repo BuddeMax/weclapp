@@ -34,24 +34,28 @@
     <div>
       <label for="customerSelect">Wähle einen Kunden:</label>
       <select id="customerSelect" v-model="selectedCustomer">
+        <option disabled value="">Bitte auswählen</option>
         <option v-for="customer in customers" :key="customer.id" :value="customer.id">{{ customer.company }} (ID: {{ customer.id }})</option>
       </select>
     </div>
     <div>
       <label for="salesOrderSelect">Wähle einen Auftrag:</label>
       <select id="salesOrderSelect" v-model="selectedOrder">
+        <option disabled value="">Bitte auswählen</option>
         <option v-for="order in salesOrders" :key="order.id" :value="order.id">{{ order.commission }} (ID: {{ order.id }})</option>
       </select>
     </div>
     <div>
       <label for="orderItemSelect">Wähle ein Service:</label>
       <select id="orderItemSelect" v-model="selectedOrderItem">
+        <option disabled value="">Bitte auswählen</option>
         <option v-for="item in orderItems" :key="item.id" :value="item.id">{{ item.title }} (ID: {{ item.id }})</option>
       </select>
     </div>
     <div>
       <label for="taskSelect">Wähle eine Aufgabe:</label>
       <select id="taskSelect" v-model="selectedTask">
+        <option disabled value="">Bitte auswählen</option>
         <option v-for="task in currentTaskAndSubject" :key="task.taskId" :value="task.taskId">
           {{ task.subject }} (ID: {{ task.taskId }})
         </option>
@@ -60,6 +64,7 @@
     <div>
       <label for="userSelect">Wähle einen User:</label>
       <select id="userSelect" v-model="selectedUser">
+        <option disabled value="">Bitte auswählen</option>
         <option v-for="user in users" :key="user.id" :value="user.id">{{ user.firstName }} {{ user.lastName }} ({{ user.email }})</option>
       </select>
     </div>
@@ -254,7 +259,7 @@ export default {
         startDate: getUnixTimestamp(item.date, item.timestamp),
         duration: convertDurationToUnixTimestamp(item.duration),
         billableDuration: convertDurationToUnixTimestamp(item.duration),
-        placeOfServiceId: Number(item.placeOfService.split(':')[1].trim()),
+        placeOfServiceId: item.placeOfService ? Number(item.placeOfService.split(':')[1].trim()) : null,
         description: item.description,
         taskId: selectedTask.value,
         userId: selectedUser.value,
@@ -321,7 +326,7 @@ export default {
             startDate: getUnixTimestamp(item.date, item.timestamp),
             duration: convertDurationToUnixTimestamp(item.duration),
             billableDuration: convertDurationToUnixTimestamp(item.duration),
-            placeOfServiceId: Number(item.placeOfService.split(':')[1].trim()),
+            placeOfServiceId: item.placeOfService ? Number(item.placeOfService.split(':')[1].trim()) : null,
             description: item.description,
             taskId: selectedTask.value,
             userId: selectedUser.value,
@@ -564,6 +569,8 @@ table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
 th, td {
