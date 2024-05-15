@@ -5,18 +5,18 @@
       <span v-if="dataLoaded">&#10004; Daten geladen</span>
       <span v-else>Daten laden</span>
     </button>
-    <div>
+    <div class="input-container">
       <label for="apiKeyInput">API Key:</label>
       <input
           id="apiKeyInput"
           type="text"
           v-model="apiKey"
-          :class="{'collapsed-input': apiKeyConfirmed, 'blurred': apiKeyConfirmed && !apiKeyVisible}"
-          @input="updateApiKey"
+          :class="{'collapsed-input': apiKeyConfirmed, 'blurred': apiKeyConfirmed && !apiKeyVisible, 'invalid-input': apiKeyInvalid, 'api-input': true}"
+          @input="validateApiKey"
           @click="apiKeyVisible = true"
           @blur="apiKeyVisible = false"
-          class="api-input"
       >
+      <p v-if="apiKeyInvalid" class="error-message">Ungültiger API-Schlüssel</p>
     </div>
     <div>
       <label for="domainInput">Domain:</label>
@@ -166,6 +166,10 @@ export default {
       if (apiKey) {
         store.commit('setApiKey', apiKey);
       }
+    },
+    validateApiKey() {
+      const apiKeyPattern = /^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/;
+      this.apiKeyInvalid = !apiKeyPattern.test(this.apiKey);
     },
     async loadCustomers() {
       try {
@@ -501,6 +505,11 @@ export default {
   box-sizing: border-box;
 }
 
+p {
+  text-align: center; /* Zentriert den Text innerhalb von Paragraph-Elementen */
+}
+
+
 body {
   margin: 0;
   font-family: 'Roboto', sans-serif;
@@ -648,6 +657,38 @@ tbody tr:hover {
 
 .error {
   background-color: #ff8080 !important;
+}
+
+
+.error-message {
+  color: #e74c3c; /* Rote Farbe für Fehler */
+  background-color: #f2dede; /* Hellroter Hintergrund für bessere Sichtbarkeit */
+  border: 1px solid #e74c3c; /* Passender Rand zur Textfarbe */
+  padding: 10px; /* Ausreichend Padding für den Inhalt */
+  border-radius: 5px; /* Abgerundete Ecken für ein modernes Aussehen */
+  font-size: 0.9rem; /* Leicht kleinere Schriftgröße */
+  animation: fadeIn 0.5s ease-in-out; /* Weiche Einblendanimation */
+  text-align: center; /* Zentrierter Text für alle Inhalte in .error-message */
+}
+
+.error-message p {
+  text-align: center; /* Zentriert den Text nur in <p>-Tags innerhalb von .error-message */
+}
+
+/* Stil für das Eingabefeld, wenn es als ungültig markiert ist */
+input.invalid-input {
+  margin-bottom: 10px;
+}
+
+
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @media (max-width: 768px) {

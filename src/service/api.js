@@ -14,6 +14,8 @@ export const fetchCustomer = async (apiKey, domain, retries = 3) => {
         redirect: "follow"
     };
 
+    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
     try {
         const response = await fetch(`https://${domain}.weclapp.com/webapp/api/v1/customer?properties=id,company`, requestOptions);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
@@ -23,12 +25,14 @@ export const fetchCustomer = async (apiKey, domain, retries = 3) => {
     } catch (error) {
         if (retries > 0 && (error.message.includes('Failed to fetch') || error.message.includes('Network Error') || (error.response && error.response.status === 0))) {
             console.error('Netzwerk- oder CORS-Fehler erkannt, versuche erneut...');
-            setTimeout(() => fetchCustomer(apiKey, domain, retries - 1), 1000);
+            await delay(1000);
+            return fetchCustomer(apiKey, domain, retries - 1);
         } else {
             console.error('Error fetching customer data:', error);
+            throw error;
         }
     }
-}
+};
 
 export const fetchUsers = async (apiKey, domain, retries = 3) => {
     const myHeaders = new Headers();
