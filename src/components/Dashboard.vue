@@ -167,10 +167,6 @@ export default {
         store.commit('setApiKey', apiKey);
       }
     },
-    validateApiKey() {
-      const apiKeyPattern = /^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/;
-      this.apiKeyInvalid = !apiKeyPattern.test(this.apiKey);
-    },
     async loadCustomers() {
       try {
         this.customers = await fetchCustomers();
@@ -210,7 +206,12 @@ export default {
     const dataLoaded = ref(false);
     const fileUploaded = ref(false);
     const dataRead = ref(false);
+    const apiKeyInvalid = ref(false); // Initialisierung von apiKeyInvalid
 
+    const validateApiKey = () => {
+      const apiKeyPattern = /^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/;
+      apiKeyInvalid.value = !apiKeyPattern.test(apiKey.value);
+    };
 
     const handleFileUpload = event => {
       file.value = event.target.files[0];
@@ -478,6 +479,8 @@ export default {
       dataLoaded,
       fileUploaded,
       dataRead,
+      apiKeyInvalid,
+      validateApiKey,
       handleFileUpload,
       confirmInput,
       toggleBlur,

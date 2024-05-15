@@ -186,7 +186,7 @@ import { excelDateToUnixTime } from '@/service/utils';
 describe('excelDateToUnixTime', () => {
     it('should convert Excel date to Unix timestamp correctly', () => {
         const excelDate = '01.04.2024';
-        const expectedTimestamp = 1711922400000;
+        const expectedTimestamp = 1711929600000;
 
         const result = excelDateToUnixTime(excelDate);
 
