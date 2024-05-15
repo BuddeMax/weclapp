@@ -1,24 +1,22 @@
 <template>
   <div class="container">
     <h1>Weclapp Time Track</h1>
-
-    <button @click="fetchData">
-      <!-- Hier ändern wir den Text oder das Icon, basierend auf dem Status von dataLoaded -->
+    <button @click="fetchData" >
       <span v-if="dataLoaded">&#10004; Daten geladen</span>
       <span v-else>Daten laden</span>
     </button>
-    <div>
+    <div class="input-container">
       <label for="apiKeyInput">API Key:</label>
       <input
           id="apiKeyInput"
           type="text"
           v-model="apiKey"
-          :class="{'collapsed-input': apiKeyConfirmed, 'blurred': apiKeyConfirmed && !apiKeyVisible}"
-          @input="confirmInput('apiKey', $event.target.value)"
+          :class="{'collapsed-input': apiKeyConfirmed, 'blurred': apiKeyConfirmed && !apiKeyVisible, 'invalid-input': apiKeyInvalid, 'api-input': true}"
+          @input="validateApiKey"
           @click="apiKeyVisible = true"
           @blur="apiKeyVisible = false"
-          class="api-input"
       >
+      <p v-if="apiKeyInvalid" class="error-message">Ungültiger API-Schlüssel</p>
     </div>
     <div>
       <label for="domainInput">Domain:</label>
@@ -27,7 +25,7 @@
           type="text"
           v-model="domain"
           :class="{'collapsed-input': domainConfirmed, 'blurred': domainConfirmed && !domainVisible}"
-          @input="confirmInput('domain', $event.target.value)"
+          @input="updateDomain"
           @click="domainVisible = true"
           @blur="domainVisible = false"
           class="domain-input"
@@ -36,24 +34,28 @@
     <div>
       <label for="customerSelect">Wähle einen Kunden:</label>
       <select id="customerSelect" v-model="selectedCustomer">
+        <option disabled value="">Bitte auswählen</option>
         <option v-for="customer in customers" :key="customer.id" :value="customer.id">{{ customer.company }} (ID: {{ customer.id }})</option>
       </select>
     </div>
     <div>
       <label for="salesOrderSelect">Wähle einen Auftrag:</label>
       <select id="salesOrderSelect" v-model="selectedOrder">
+        <option disabled value="">Bitte auswählen</option>
         <option v-for="order in salesOrders" :key="order.id" :value="order.id">{{ order.commission }} (ID: {{ order.id }})</option>
       </select>
     </div>
     <div>
       <label for="orderItemSelect">Wähle ein Service:</label>
       <select id="orderItemSelect" v-model="selectedOrderItem">
+        <option disabled value="">Bitte auswählen</option>
         <option v-for="item in orderItems" :key="item.id" :value="item.id">{{ item.title }} (ID: {{ item.id }})</option>
       </select>
     </div>
     <div>
       <label for="taskSelect">Wähle eine Aufgabe:</label>
       <select id="taskSelect" v-model="selectedTask">
+        <option disabled value="">Bitte auswählen</option>
         <option v-for="task in currentTaskAndSubject" :key="task.taskId" :value="task.taskId">
           {{ task.subject }} (ID: {{ task.taskId }})
         </option>
@@ -62,6 +64,7 @@
     <div>
       <label for="userSelect">Wähle einen User:</label>
       <select id="userSelect" v-model="selectedUser">
+        <option disabled value="">Bitte auswählen</option>
         <option v-for="user in users" :key="user.id" :value="user.id">{{ user.firstName }} {{ user.lastName }} ({{ user.email }})</option>
       </select>
     </div>
@@ -81,15 +84,6 @@
     <div>
       <button @click="postAllTimeRecords">Zeiten buchen</button>
     </div>
-    <div class="error-dashboard" v-if="issues.length > 0" @click="clearIssues">
-      <h2>Fehler Dashboard</h2>
-      <div v-for="(issue, index) in issues" :key="index">
-        {{ issue }}
-      </div>
-    </div>
-    <div class="finish-dashboard" v-if="postConfirmed">
-      <h2>Post Erfolgreich</h2>
-    </div>
     <div>
       <h2>Data:</h2>
       <table>
@@ -100,15 +94,17 @@
           <th v-if="hasDescription">Beschreibung</th>
           <th>Dauer in Stunden</th>
           <th>Ort</th>
+          <th>Status</th> <!-- Neue Spalte für den Status -->
         </tr>
         </thead>
         <tbody>
-        <tr v-for="(item, index) in data" :key="index">
+        <tr v-for="(item) in data.value" :key="`${item.id}-${item.message}`">
           <td>{{ item.date }}</td>
           <td>{{ item.timestamp }}</td>
-          <td v-if="hasDescription">{{ item.description || ' ' }}</td> <!-- Anzeige von leeren Zellen wenn keine Beschreibung -->
+          <td v-if="hasDescription">{{ item.description || ' ' }}</td>
           <td>{{ item.duration }}</td>
           <td>{{ item.placeOfService }}</td>
+          <td :class="{ 'success': item.message === 'Erfolgreich', 'error': item.message && item.message !== 'Erfolgreich' }">{{ item.message || 'Nicht verarbeitet' }}</td>
         </tr>
         </tbody>
       </table>
@@ -117,15 +113,34 @@
 </template>
 
 <script>
-import {reactive, ref, watch} from 'vue';
+import {reactive, ref, watch, nextTick} from 'vue';
 import * as XLSX from 'xlsx';
 import axios, {post} from "axios";
 import async from "async";
-
+import { store } from '../store/store.js';
+import {convertExcelDateToJSDate} from '../service/utils.js';
+import {convertExcelTimeToReadableTime} from '../service/utils.js';
+import {convertDurationToUnixTimestamp} from '../service/utils.js';
+import {excelDateToUnixTime} from '../service/utils.js';
+import {getUnixTimestamp} from '../service/utils.js';
+import {fetchCustomer, fetchUsers} from '../service/api.js';
+import { fetchSalesOrders } from '../service/api.js';
+import { fetchSelectedSalesOrder } from '../service/api.js';
+import { fetchTaskAndSubject } from '../service/api.js';
+import { postTimeRecord, postAllTimeRecords } from '../service/api.js';
 
 
 export default {
+  created() {
+    this.updateDomain();
+    this.updateApiKey();
+  },
   methods: {
+    convertExcelDateToJSDate,
+    convertExcelTimeToReadableTime,
+    convertDurationToUnixTimestamp,
+    excelDateToUnixTime,
+    getUnixTimestamp,
     handleFileUpload(event) {
       const fileNameLabel = document.getElementById('file-name');
       const files = event.target.files;
@@ -140,11 +155,31 @@ export default {
       this.issues = [];
       console.log('issues after clearing:', this.issues);
     },
+    updateDomain() {
+      let domain = localStorage.getItem('domain');
+      if (domain) {
+        store.commit('setDomain', domain);
+      }
+    },
+    updateApiKey() {
+      let apiKey = localStorage.getItem('apiKey');
+      if (apiKey) {
+        store.commit('setApiKey', apiKey);
+      }
+    },
+    async loadCustomers() {
+      try {
+        this.customers = await fetchCustomers();
+      } catch (error) {
+        console.error('Fehler beim Laden der Kunden:', error);
+      }
+    },
   },
   setup() {
     const file = ref(null);
-    const data = ref([]);
-    const editedData = ref([]); // halten Sie editedData als ref
+    const data = reactive([]);
+    const reactiveData = reactive([]); // Verwenden Sie reactive anstelle von ref
+    const editedData = reactive([]); // Verwenden Sie reactive anstelle von ref
     const salesOrders = ref([]);
     const selectedOrder = ref(null);
     const orderItems = ref([]);
@@ -171,11 +206,12 @@ export default {
     const dataLoaded = ref(false);
     const fileUploaded = ref(false);
     const dataRead = ref(false);
+    const apiKeyInvalid = ref(false); // Initialisierung von apiKeyInvalid
 
-
-
-
-
+    const validateApiKey = () => {
+      const apiKeyPattern = /^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/;
+      apiKeyInvalid.value = !apiKeyPattern.test(apiKey.value);
+    };
 
     const handleFileUpload = event => {
       file.value = event.target.files[0];
@@ -195,27 +231,25 @@ export default {
         const sheetName = wb.SheetNames[0];
         const worksheet = wb.Sheets[sheetName];
 
-        // Festlegen des Bereichs zum Ignorieren der ersten vier Zeilen und Starten bei der fünften Zeile
         const range = XLSX.utils.decode_range(worksheet['!ref']);
-        range.s.r = 4; // Start ab der fünften Zeile
+        range.s.r = 4;
 
-        // Konvertieren der Daten zu JSON, wobei der modifizierte Bereich genutzt wird
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { range }).map(item => {
-          // Überprüfen, ob das Zeitfeld und das Feld "Dauer in Stunden" nicht leer sind
           if (!isNaN(item.Zeit) && !isNaN(item['Dauer in Stunden'])) {
 
             return {
               date: convertExcelDateToJSDate(item.Datum),
               timestamp: convertExcelTimeToReadableTime(item.Zeit),
               description: item.Beschreibung,
-              duration: convertExcelTimeToReadableTime(item['Dauer in Stunden']), // Umwandlung von Stunden in Sekunden
+              duration: convertExcelTimeToReadableTime(item['Dauer in Stunden']),
               placeOfService: item['Ort']
             };
           }
-        }).filter(item => item !== undefined); // Entfernen von undefinierten Einträgen
-        hasDescription.value = jsonData.some(item => item.description); // Überprüfen, ob irgendein Element eine Beschreibung hat
+        }).filter(item => item !== undefined);
+        hasDescription.value = jsonData.some(item => item.description);
 
         data.value = jsonData;
+        reactiveData.value = jsonData;
         console.log('Data read: ', data.value);
         convertData()
       };
@@ -223,96 +257,14 @@ export default {
     };
 
 
-    function convertExcelDateToJSDate(excelDate) {
-      // Basisdatum für Excel ist der 30. Dezember 1899
-      const baseDate = new Date(1899, 11, 30); // Jahr, Monat (0-basiert), Tag
-
-      // Das Excel-Datum in Tage umrechnen
-      const date = new Date(baseDate.getTime() + (excelDate * 24 * 60 * 60 * 1000));
-
-      // Extraktion von Tag, Monat und Jahr
-      const day = date.getDate();
-      const month = date.getMonth() + 1; // Monate sind 0-basiert, daher +1
-      const year = date.getFullYear();
-
-      // Formatierung des Datums in 'dd.mm.jjjj'
-      const formattedDate = `${day.toString().padStart(2, '0')}.${month.toString().padStart(2, '0')}.${year}`;
-      return formattedDate;
-    }
-
-    function convertExcelTimeToReadableTime(excelTime) {
-      // Berechnung der Stunden, Minuten und Sekunden aus dem seriellen Wert
-      var fractional_day = excelTime - Math.floor(excelTime) + 0.0000001;
-      var total_seconds = Math.floor(86400 * fractional_day);
-      var seconds = total_seconds % 60;
-      total_seconds -= seconds;
-      var hours = Math.floor(total_seconds / (60 * 60));
-      var minutes = Math.floor(total_seconds / 60) % 60;
-
-      // Rückgabe im Format HH:MM:SS
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
-
-
-
-    function convertDurationToUnixTimestamp(duration) {
-      const [hours, minutes] = duration.split(':').map(Number);
-      const totalMinutes = hours * 60 + minutes;
-      // Umwandlung der Minuten in Sekunden
-      const totalSeconds = totalMinutes * 60;
-      return totalSeconds;
-    }
-
-
-    function excelDateToUnixTime(excelDate) {
-      // Überprüfen, ob das Eingabedatum ein gültiges Format hat
-      if (!/^\d{2}\.\d{2}\.\d{4}$/.test(excelDate)) {
-        throw new Error("Invalid date format. Please use dd.mm.yyyy format.");
-      }
-
-      // Split the Excel date string into day, month, and year components
-      const dateComponents = excelDate.split('.');
-
-      // Parse day, month, and year from the components
-      const day = parseInt(dateComponents[0], 10);
-      const month = parseInt(dateComponents[1], 10);
-      const year = parseInt(dateComponents[2], 10);
-
-      // Create a JavaScript Date object from the parsed components
-      const jsDate = new Date(year, month - 1, day);
-
-      // JavaScript behandelt Datum und Uhrzeit gemäß lokaler Zeitzone. Um den Unix-Timestamp zu erhalten,
-      // der die Anzahl der Millisekunden seit dem 1. Januar 1970 00:00:00 UTC darstellt,
-      // sollten wir sicherstellen, dass das Datum korrekt in UTC interpretiert wird.
-      const unixTimeInMilliseconds = jsDate.getTime();
-
-      return unixTimeInMilliseconds; // oder return unixTimeInMilliseconds; für Millisekunden
-    }
-
-    function getUnixTimestamp(date, time) {
-      // Kombinieren Sie Datum und Uhrzeit in einem String
-      const dateTimeString = `${date} ${time}`;
-
-      // Definieren Sie das Format des Datums und der Uhrzeit
-      const format = "DD.MM.YYYY HH:mm:ss";
-
-      // Erstellen Sie ein Date-Objekt mit der Zeitzone "Europe/Berlin"
-      const dateTime = moment.tz(dateTimeString, format, "Europe/Berlin");
-
-      // Umwandeln in Unix Timestamp (Anzahl der Sekunden seit dem 1. Januar 1970)
-      return dateTime.unix()*1000;
-    }
-
 
     const convertData = () => {
-      // Konvertieren der Daten
 
       const convertedData = data.value.map(item => ({
         startDate: getUnixTimestamp(item.date, item.timestamp),
         duration: convertDurationToUnixTimestamp(item.duration),
         billableDuration: convertDurationToUnixTimestamp(item.duration),
-        // wenn in der Zeile remote steht dann 6240, wenn Vor Ort beim Kunden dann 13360
-        placeOfServiceId: Number(item.placeOfService.split(':')[1].trim()),
+        placeOfServiceId: item.placeOfService ? Number(item.placeOfService.split(':')[1].trim()) : null,
         description: item.description,
         taskId: selectedTask.value,
         userId: selectedUser.value,
@@ -327,260 +279,101 @@ export default {
       dataRead.value = true;
     };
 
-    const fetchCustomer = async (retries = 3) => {
-      const myHeaders = new Headers();
-      myHeaders.append("Accept", "application/json");
-      myHeaders.append("AuthenticationToken", apiKey.value);
-      myHeaders.append("Access-Control-Request-Method", "GET");
-      myHeaders.append("Access-Control-Request-Headers", "AuthenticationToken, Content-Type");
-      myHeaders.append("Origin", `https://${domain.value}.weclapp.com`);
+    const fetchData = async () => {
+      loadUsers(),
+          loadCustomerData()
+    };
 
-      const requestOptions = {
-        method: "GET",
-        headers: myHeaders,
-        redirect: "follow"
-      };
-
-      try {
-        const response = await fetch(`https://${domain.value}.weclapp.com/webapp/api/v1/customer?properties=id,company`, requestOptions);
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        const result = await response.text();
-        const parsedResult = JSON.parse(result);
-        customers.value = parsedResult.result;
-        console.log('Customer data loaded successfully');
-        setTimeout(() => {
-          dataLoaded.value = true;
-        }, 100); // 100 Millisekunden entsprechen 0,1 Sekunden
-      } catch (error) {
-        if (retries > 0 && (error.message.includes('Failed to fetch') || error.message.includes('Network Error') || (error.response && error.response.status === 0))) {
-          console.error('Netzwerk- oder CORS-Fehler erkannt, versuche erneut...');
-          setTimeout(() => fetchCustomer(retries - 1), 1000);
-        } else {
-          console.error('Error fetching customer data:', error);
-        }
+    const loadCustomerData = async () => {
+      let customersData = await fetchCustomer(apiKey.value, domain.value);
+      while (!customersData || customersData.length === 0) {
+        console.log('Keine Kundendaten gefunden, versuche erneut...');
+        customersData = await fetchCustomer(apiKey.value, domain.value);
       }
+      customers.value = customersData;
+      console.log('Customer data loaded successfully');
+      setTimeout(() => {
+        dataLoaded.value = true;
+      }, 100);
+    };
+
+    const loadUsers = async () => {
+      let usersData;
+      do {
+        usersData = await fetchUsers(apiKey.value, domain.value);
+        if (!usersData || usersData.length === 0) {
+          console.log('Keine Benutzerdaten gefunden, versuche erneut...');
+        } else {
+          console.log('Benutzerdaten erfolgreich geladen');
+        }
+      } while (!usersData || usersData.length === 0);
+      users.value = usersData;
+    };
+
+    const loadSalesOrdersData = async () => {
+      const salesOrdersData = await fetchSalesOrders(apiKey.value, domain.value, selectedCustomer.value);
+      salesOrders.value = salesOrdersData;
+      console.log('Sales orders data loaded successfully');
+    };
+
+    const loadSelectedSalesOrder = async () => {
+      const selectedSalesOrderData = await fetchSelectedSalesOrder(apiKey.value, domain.value, selectedOrder.value);
+      orderItems.value = selectedSalesOrderData;
+      console.log('Order items data loaded successfully');
+    };
+
+    const postAllTimeRecords = async () => {
+      console.log("Beginne mit dem Posten aller Zeiteinträge");
+      for (let i = 0; i < data.value.length; i++) {
+        const item = data.value[i];
+        try {
+          const result = await postTimeRecord({
+            startDate: getUnixTimestamp(item.date, item.timestamp),
+            duration: convertDurationToUnixTimestamp(item.duration),
+            billableDuration: convertDurationToUnixTimestamp(item.duration),
+            placeOfServiceId: item.placeOfService ? Number(item.placeOfService.split(':')[1].trim()) : null,
+            description: item.description,
+            taskId: selectedTask.value,
+            userId: selectedUser.value,
+          }, apiKey.value, domain.value);
+
+          if (result.success) {
+            console.log('Time record posted successfully:', result.messages);
+            data.value[i].message = 'Erfolgreich';
+            console.log('Data:', data.value[i]);
+            await nextTick();
+          } else {
+            console.error('Error posting time record:', result.messages);
+            data.value[i].message = 'Fehler: ' + result.messages.join(', ');
+          }
+        } catch (error) {
+          console.error('Exception when posting time record:', error);
+          data.value[i].message = 'Ausnahme: ' + error.message;
+        }
+        await nextTick();
+      }
+       // Stellt sicher, dass die Ansicht aktualisiert wird
+    };
+
+
+
+
+
+    if (Array.isArray(editedData.value)) {
+      editedData.value.forEach(item => {
+        postTimeRecord(item);
+      });
     }
 
 
 
-
-
-
-
-
-    const fetchSalesOrders = async (retries = 3) => {
-      const myHeaders = new Headers();
-      myHeaders.append("Accept", "application/json");
-      myHeaders.append("AuthenticationToken", apiKey.value);
-      myHeaders.append("Access-Control-Request-Method", "GET");
-      myHeaders.append("Access-Control-Request-Headers", "AuthenticationToken, Content-Type");
-      myHeaders.append("Origin", `https://${domain.value}.weclapp.com`);
-
-      const requestOptions = {
-        method: "GET",
-        headers: myHeaders,
-        redirect: "follow"
-      };
-
-      try {
-        const response = await fetch(`https://${domain.value}.weclapp.com/webapp/api/v1/salesOrder?properties=id,commission&customerId-eq="${selectedCustomer.value}"`, requestOptions);
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        const result = await response.json();
-        salesOrders.value = result.result.map(order => ({
-          id: order.id,
-          commission: order.commission
-        }));
-        console.log('Verkaufsaufträge erfolgreich geladen');
-      } catch (error) {
-        if (retries > 0 && (error.message.includes('Failed to fetch') || error.message.includes('Network Error') || (error.response && error.response.status === 0))) {
-          console.error('Netzwerk- oder CORS-Fehler erkannt, versuche erneut...');
-          setTimeout(() => fetchSalesOrders(retries - 1), 1000);
-        } else {
-          console.error('Fehler beim Abrufen der Verkaufsaufträge:', error);
-        }
-      }
-    };
-
-
-
-    const fetchSelectedSalesOrder = async (selectedValue) => {
-      console.log('fetchSelectedSalesOrder called with: ', selectedValue);
-      if (!selectedValue) return;
-      const url = `https://${domain.value}.weclapp.com/webapp/api/v1/salesOrder?id-eq="${selectedValue}"&properties=id,orderItems.id,orderItems.title,orderItems.tasks.id`;
-      try {
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            "Accept": "application/json",
-            "AuthenticationToken": apiKey.value
-          }
-        });
-        const result = await response.json();
-        if (response.ok) {
-          // Ensure you are accessing the first element of the result array
-          if (result.result && result.result.length > 0) {
-            const orderData = result.result[0]; // Access the first element of result
-            orderItems.value = orderData.orderItems.map(item => ({
-              id: item.id,
-              title: item.title,
-              tasks: item.tasks.map(task => task.id),
-            }));
-            console.log('Extracted task ids: ', orderItems.value);
-          } else {
-            console.log('No data found for the given id.');
-          }
-        } else {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-      } catch (e) {
-        console.error("Error fetching selected sales order: ", e);
-      }
-    };
-
-    const fetchTaskAndSubject = async (taskId, retries = 3) => {
-      const url = `https://${domain.value}.weclapp.com/webapp/api/v1/task?id-eq=${taskId}&properties=id,subject`;
-      try {
-        const response = await axios.get(url, {
-          headers: {
-            "Accept": "application/json",
-            "AuthenticationToken": apiKey.value
-          }
-        });
-        const tasks = response.data.result;  // Verwenden von 'result' aus dem neuen Antwortformat
-        if (tasks.length > 0) {
-          const taskData = tasks[0];  // Nehmen das erste Task, da 'id-eq' verwendet wird und somit nur ein Ergebnis erwartet wird
-          currentTaskAndSubject.value.push({
-            taskId: taskData.id,
-            subject: taskData.subject,
-          });
-        } else {
-          console.error('Keine Aufgaben gefunden.');
-        }
-      } catch (error) {
-        if (retries > 0 && (error.message.includes("Network Error") || (error.response && error.response.status === 0))) {
-          console.error('Netzwerkfehler erkannt, versuche erneut...');
-          setTimeout(() => fetchTaskAndSubject(taskId, retries - 1), 1000);
-        } else {
-          console.error('Fehler beim Abrufen der Task- und Subject-Daten:', error);
-        }
-      }
-    };
-
-
-
-    const fetchUsers = async (retries = 3) => {
-      const myHeaders = new Headers();
-      myHeaders.append("Accept", "application/json");
-      myHeaders.append("Content-Type", "application/json");
-      myHeaders.append("AuthenticationToken", apiKey.value);
-      myHeaders.append("Cookie", "_sid_=19");
-      myHeaders.append("Access-Control-Request-Method", "GET");
-      myHeaders.append("Access-Control-Request-Headers", "AuthenticationToken, Content-Type");
-      myHeaders.append("Origin", `https://${domain.value}.weclapp.com`);
-
-      const requestOptions = {
-        method: "GET",
-        headers: myHeaders,
-        redirect: "follow"
-      };
-
-      try {
-        const response = await fetch(`https://${domain.value}.weclapp.com/webapp/api/v1/user`, requestOptions);
-        if (!response.ok) throw new Error('Response not okay');
-        const result = await response.text();
-        const parsedResult = JSON.parse(result);
-        users.value = parsedResult.result;
-        console.log('User-Daten erfolgreich geladen');
-      } catch (error) {
-        if (retries > 0 && (error.message.includes('Failed to fetch') || error.message.includes('Network Error') || (error.response && error.response.status === 0))) {
-          console.error('Netzwerk- oder CORS-Fehler erkannt, versuche erneut...');
-          setTimeout(() => fetchUsers(retries - 1), 1000);
-        } else {
-          console.error('Fehler beim Abrufen der Benutzerdaten:', error);
-        }
-      }
-    };
-
-
-    const postTimeRecord = async (item) => {
-      const myHeaders = new Headers({
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "AuthenticationToken": apiKey.value
-      });
-
-      const raw = JSON.stringify({
-        "billable": true,
-        "billableDurationSeconds": item.duration,
-        "description": item.description,
-        "durationSeconds": item.duration,
-        "startDate": item.startDate,
-        "taskId": selectedTask.value,
-        "userId": selectedUser.value,
-        "placeOfServiceId": item.placeOfServiceId
-      });
-
-      const requestOptions = {
-        method: "POST",
-        headers: myHeaders,
-        body: raw,
-        redirect: "follow"
-      };
-
-      try {
-        const response = await fetch(`https://${domain.value}.weclapp.com/webapp/api/v1/timeRecord`, requestOptions);
-        const result = await response.json();
-        if (!response.ok && response.status === 400) {
-          // add to issue
-          if (result.messages) {
-            const messages = result.messages.map(message => message.message);
-            messages.forEach(message => {
-              if (!issues.value.some(issue => issue === message)) {
-                issues.value.push(message);
-              }
-            });
-          } else if (result.error) {
-            if (!issues.value.some(issue => issue === result.error)) {
-              issues.value.push(result.error);
-            }
-          }
-        }
-        else if (response.status === 201) {
-          postConfirmed.value = true;
-          console.log('Time record posted successfully:', result);
-        }
-      } catch (error) {
-        console.error('Error posting time record:', error);
-      }
-    };
-
-    const postAllTimeRecords = async () => {
-      console.log("button clicked");
-      console.log(editedData.value);
-      for (const item of editedData.value) {
-        await postTimeRecord(item);
-      }
-    };
-
-// Führen Sie den POST-Request für jede Zeile in der Excel-Datei aus
-    editedData.value.forEach(item => {
-      postTimeRecord(item);
-    });
-
-
-    const fetchData = () => {
-      fetchCustomer();
-      fetchUsers();
-
-    };
 
     watch(selectedCustomer, async (newVal) => {
       if (newVal) {
         console.log(`Selected customer ID: ${newVal}`);
         selectedCustomer.value = newVal;
         console.log('Selected customer: ', selectedCustomer.value);
-        await fetchCustomer(newVal);
-        fetchSalesOrders();
+        await loadSalesOrdersData(apiKey.value, domain.value, selectedCustomer.value);
       }
     }, { immediate: false });
 
@@ -595,22 +388,30 @@ export default {
 
     watch(selectedOrder, async (newVal) => {
       if (newVal) {
+        selectedOrder.value = newVal;
         console.log(`Selected order ID: ${newVal}`);
-        await fetchSelectedSalesOrder(newVal);
+        await loadSelectedSalesOrder(apiKey,domain, newVal);
       }
     }, { immediate: false });
 
 
-    watch(selectedOrderItem, (newVal) => {
+    watch(selectedOrderItem, async (newVal) => {
       if (newVal) {
         const selectedItem = orderItems.value.find(item => item.id === newVal);
         if (selectedItem && selectedItem.tasks) {
           currentTasks.value = selectedItem.tasks;
           console.log('Tasks geladen: ', currentTasks.value);
           currentTaskAndSubject.value = []; // Zurücksetzen vor dem Hinzufügen neuer Daten
-          selectedItem.tasks.forEach(taskId => {
-            fetchTaskAndSubject(taskId);
-          });
+          for (const taskId of selectedItem.tasks) {
+            const tasks = await fetchTaskAndSubject(apiKey.value, domain.value, taskId);
+            if (tasks && tasks.length > 0) {
+              const taskData = tasks[0];
+              currentTaskAndSubject.value.push({
+                taskId: taskData.id,
+                subject: taskData.subject,
+              });
+            }
+          }
           console.log('Tasks und Subjects geladen: ', currentTaskAndSubject.value);
         } else {
           currentTasks.value = [];
@@ -634,7 +435,6 @@ export default {
       localStorage.setItem('domain', newDomain);
     });
 
-    // State für Eingabebestätigung
     const confirmInput = (field, value) => {
       if (field === 'apiKey') {
         apiKeyConfirmed.value = !!value.trim();
@@ -658,7 +458,7 @@ export default {
       salesOrders,
       orderItems,
       tasks,
-      currentTasks, // Stellen Sie sicher, dass currentTasks im Template verwendet wird
+      currentTasks,
       selectedTask,
       users,
       selectedUser,
@@ -679,6 +479,8 @@ export default {
       dataLoaded,
       fileUploaded,
       dataRead,
+      apiKeyInvalid,
+      validateApiKey,
       handleFileUpload,
       confirmInput,
       toggleBlur,
@@ -690,7 +492,9 @@ export default {
       fetchUsers,
       postAllTimeRecords,
       fetchTaskAndSubject,
-      fetchCustomer
+      loadCustomerData,
+      loadSalesOrdersData,
+      loadSelectedSalesOrder
     };
   }
 }
@@ -703,6 +507,11 @@ export default {
 * {
   box-sizing: border-box;
 }
+
+p {
+  text-align: center; /* Zentriert den Text innerhalb von Paragraph-Elementen */
+}
+
 
 body {
   margin: 0;
@@ -768,11 +577,12 @@ input[type="file"] {
   position: absolute;
 }
 
-/* Adjusting Table Styles */
 table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
 th, td {
@@ -787,10 +597,11 @@ thead {
 
 tbody tr {
   transition: background-color 0.3s;
+  background-color: #ffffff;
 }
 
 tbody tr:nth-child(even) {
-  background-color: #f0f0f0;
+  background-color: #fafafa;
 }
 
 tbody tr:hover {
@@ -824,8 +635,6 @@ tbody tr:hover {
   font-weight: 500;
   font-family: 'Roboto', sans-serif;
   text-transform: uppercase;
-
-
 }
 
 .file-input label:hover {
@@ -845,26 +654,44 @@ tbody tr:hover {
   user-select: none;
 }
 
-.error-dashboard {
-  background-color: #f8d7da; /* Sanftes Rot als Hintergrundfarbe */
-  border: 2px solid #f5c6cb; /* Zartere rote Umrandung */
-  border-radius: 15px; /* Abgerundete Ecken */
-  padding: 20px;
-  max-width: 600px;
-  margin: 20px auto;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.1); /* Stärkerer Schatten für mehr Tiefe */
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modernere Schriftart */
+.success {
+  background-color: #abff81 !important;
 }
 
-.finish-dashboard{
-  background-color: #90EE90; /* Leichtes Grün als Hintergrundfarbe */
-  border: 2px solid #32CD32; /* Dunkleres Grün als Rahmenfarbe */
-  border-radius: 15px; /* Abgerundete Ecken */
-  padding: 20px;
-  max-width: 600px;
-  margin: 20px auto;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.1); /* Stärkerer Schatten für mehr Tiefe */
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modernere Schriftart */
+.error {
+  background-color: #ff8080 !important;
+}
+
+
+.error-message {
+  color: #e74c3c; /* Rote Farbe für Fehler */
+  background-color: #f2dede; /* Hellroter Hintergrund für bessere Sichtbarkeit */
+  border: 1px solid #e74c3c; /* Passender Rand zur Textfarbe */
+  padding: 10px; /* Ausreichend Padding für den Inhalt */
+  border-radius: 5px; /* Abgerundete Ecken für ein modernes Aussehen */
+  font-size: 0.9rem; /* Leicht kleinere Schriftgröße */
+  animation: fadeIn 0.5s ease-in-out; /* Weiche Einblendanimation */
+  text-align: center; /* Zentrierter Text für alle Inhalte in .error-message */
+}
+
+.error-message p {
+  text-align: center; /* Zentriert den Text nur in <p>-Tags innerhalb von .error-message */
+}
+
+/* Stil für das Eingabefeld, wenn es als ungültig markiert ist */
+input.invalid-input {
+  margin-bottom: 10px;
+}
+
+
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @media (max-width: 768px) {
@@ -875,8 +702,5 @@ tbody tr:hover {
   h1 {
     font-size: 2rem;
   }
-
-
 }
 </style>
-
