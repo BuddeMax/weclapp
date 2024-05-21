@@ -17,7 +17,7 @@ export const fetchCustomer = async (apiKey, domain, retries = 3) => {
     const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
     try {
-        const response = await fetch(`https://${domain}.weclapp.com/webapp/api/v1/customer?properties=id,company`, requestOptions);
+        const response = await fetch(`https://${domain}.weclapp.com/webapp/api/v1/customer?properties=id,company,customerNumber`, requestOptions);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const result = await response.text();
         const parsedResult = JSON.parse(result);
@@ -83,12 +83,13 @@ export const fetchSalesOrders = async (apiKey, domain, selectedCustomer, retries
     };
 
     try {
-        const response = await fetch(`https://${domain}.weclapp.com/webapp/api/v1/salesOrder?properties=id,commission&customerId-eq="${selectedCustomer}"`, requestOptions);
+        const response = await fetch(`https://${domain}.weclapp.com/webapp/api/v1/salesOrder?customerId-eq="${selectedCustomer}"`, requestOptions);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const result = await response.json();
         const salesOrders = result.result.map(order => ({
             id: order.id,
-            commission: order.commission
+            commission: order.commission,
+            orderNumber: order.orderNumber,
         }));
         console.log('Verkaufsaufträge erfolgreich geladen');
         return salesOrders;
@@ -107,7 +108,7 @@ export const fetchSalesOrders = async (apiKey, domain, selectedCustomer, retries
 export const fetchSelectedSalesOrder = async (apiKey, domain, selectedValue) => {
     console.log('fetchSelectedSalesOrder called with: ', selectedValue);
     if (!selectedValue) return;
-    const url = `https://${domain}.weclapp.com/webapp/api/v1/salesOrder?id-eq="${selectedValue}"&properties=id,orderItems.id,orderItems.title,orderItems.tasks.id`;
+    const url = `https://${domain}.weclapp.com/webapp/api/v1/salesOrder?id-eq="${selectedValue}"&properties=id,orderItems.id,orderItems.title,orderItems.articleNumber,orderItems.tasks.id`;
     try {
         const response = await fetch(url, {
             method: 'GET',
@@ -124,6 +125,7 @@ export const fetchSelectedSalesOrder = async (apiKey, domain, selectedValue) => 
                     id: item.id,
                     title: item.title,
                     tasks: item.tasks.map(task => task.id),
+                    articleNumber: item.articleNumber
                 }));
                 console.log('Extracted task ids: ', orderItems);
                 return orderItems;
@@ -139,7 +141,7 @@ export const fetchSelectedSalesOrder = async (apiKey, domain, selectedValue) => 
 };
 
 export const fetchTaskAndSubject = async (apiKey, domain, taskId, retries = 3) => {
-    const url = `https://${domain}.weclapp.com/webapp/api/v1/task?id-eq=${taskId}&properties=id,subject`;
+    const url = `https://${domain}.weclapp.com/webapp/api/v1/task?id-eq=${taskId}&properties=id,subject,parentTaskId`;
     try {
         const response = await axios.get(url, {
             headers: {
@@ -209,3 +211,64 @@ export const postTimeRecord = async (item, apiKey, domain) => {
     }
 };
 
+// api.js
+export const checkTaskCompletion = async (apiKey, domain, taskId) => {
+    const myHeaders = new Headers();
+    myHeaders.append("Accept", "application/json");
+    myHeaders.append("AuthenticationToken", apiKey);
+    myHeaders.append("Access-Control-Request-Method", "GET");
+    myHeaders.append("Access-Control-Request-Headers", "AuthenticationToken, Content-Type");
+    myHeaders.append("Origin", `https://${domain}.weclapp.com`);
+
+    const requestOptions = {
+        method: "GET",
+        headers: myHeaders,
+        redirect: "follow"
+    };
+
+    try {
+        // Fetch für timeRecords
+        const timeRecordsUrl = `https://${domain}.weclapp.com/webapp/api/v1/timeRecord?taskId-eq=${taskId}&properties=id,durationSeconds`;
+        const timeRecordsResponse = await fetch(timeRecordsUrl, requestOptions);
+        if (!timeRecordsResponse.ok) throw new Error(`HTTP error! Status: ${timeRecordsResponse.status}`);
+        const timeRecordsData = await timeRecordsResponse.json();
+        const timeRecords = timeRecordsData.result;
+
+        // Summiere die Dauer aller Zeiteinträge für die gegebene taskId
+        const totalDuration = timeRecords.reduce((sum, record) => sum + record.durationSeconds, 0);
+        console.log('Total duration in seconds:', totalDuration);
+
+        // Fetch für task
+        const taskUrl = `https://${domain}.weclapp.com/webapp/api/v1/task?id-eq=${taskId}&properties=id,subject,plannedEffort`;
+        const taskResponse = await fetch(taskUrl, requestOptions);
+        if (!taskResponse.ok) throw new Error(`HTTP error! Status: ${taskResponse.status}`);
+        const taskData = await taskResponse.json();
+        console.log('Task data:', taskData);
+        const task = taskData.result[0];
+        console.log('Task:', task);
+
+        let finishes = totalDuration >= task.plannedEffort;
+        console.log('Finishes:', finishes);
+        let remainingHours = !finishes ? (task.plannedEffort - totalDuration) / 3600 : 0;
+        console.log('Remaining hours:', remainingHours);
+        let plannedEffortHours = task.plannedEffort / 3600;
+        console.log('Planned effort hours:', plannedEffortHours);
+
+        // Ausgabe der Ergebnisse
+        if (finishes) {
+            console.log(`Die Aufgabe "${task.subject}" ist abgeschlossen.`);
+        } else {
+            console.log(`Die Aufgabe "${task.subject}" ist noch nicht abgeschlossen. Verbleibende Stunden: ${remainingHours}`);
+        }
+
+        // Rückgabe des Ergebnisses
+        return {
+            finishes,
+            remainingHours,
+            plannedEffortHours
+        };
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        return null;
+    }
+};

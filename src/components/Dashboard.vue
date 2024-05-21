@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <h1>Weclapp Time Track</h1>
-    <button @click="fetchData" >
+    <button @click="fetchData">
       <span v-if="dataLoaded">&#10004; Daten geladen</span>
       <span v-else>Daten laden</span>
     </button>
@@ -35,24 +35,33 @@
       <label for="customerSelect">Wähle einen Kunden:</label>
       <select id="customerSelect" v-model="selectedCustomer">
         <option disabled value="">Bitte auswählen</option>
-        <option v-for="customer in customers" :key="customer.id" :value="customer.id">{{ customer.company }} (ID: {{ customer.id }})</option>
+        <option v-for="customer in customers" :key="customer.id" :value="customer.id">{{ customer.company }} -
+          {{ customer.customerNumber }}
+        </option>
       </select>
     </div>
     <div>
       <label for="salesOrderSelect">Wähle einen Auftrag:</label>
       <select id="salesOrderSelect" v-model="selectedOrder">
         <option disabled value="">Bitte auswählen</option>
-        <option v-for="order in salesOrders" :key="order.id" :value="order.id">{{ order.commission }} (ID: {{ order.id }})</option>
+        <option v-for="order in salesOrders" :key="order.id" :value="order.id">
+          {{ order.commission }} - {{ order.orderNumber }}
+        </option>
       </select>
     </div>
     <div>
       <label for="orderItemSelect">Wähle ein Service:</label>
       <select id="orderItemSelect" v-model="selectedOrderItem">
         <option disabled value="">Bitte auswählen</option>
-        <option v-for="item in orderItems" :key="item.id" :value="item.id">{{ item.title }} (ID: {{ item.id }})</option>
+        <option v-for="item in orderItems" :key="item.id" :value="item.id">{{ item.title }} - frei Stunde:
+          {{ item.remainingHours }}
+        </option>
       </select>
     </div>
     <div>
+      <p v-if="taskCompletionStatus" class="error-message">Abgeschlossen</p>
+    </div>
+    <div v-if="!taskCompletionStatus">
       <label for="taskSelect">Wähle eine Aufgabe:</label>
       <select id="taskSelect" v-model="selectedTask">
         <option disabled value="">Bitte auswählen</option>
@@ -65,7 +74,9 @@
       <label for="userSelect">Wähle einen User:</label>
       <select id="userSelect" v-model="selectedUser">
         <option disabled value="">Bitte auswählen</option>
-        <option v-for="user in users" :key="user.id" :value="user.id">{{ user.firstName }} {{ user.lastName }} ({{ user.email }})</option>
+        <option v-for="user in users" :key="user.id" :value="user.id">{{ user.firstName }} {{ user.lastName }}
+          ({{ user.email }})
+        </option>
       </select>
     </div>
     <div class="file-input">
@@ -104,7 +115,9 @@
           <td v-if="hasDescription">{{ item.description || ' ' }}</td>
           <td>{{ item.duration }}</td>
           <td>{{ item.placeOfService }}</td>
-          <td :class="{ 'success': item.message === 'Erfolgreich', 'error': item.message && item.message !== 'Erfolgreich' }">{{ item.message || 'Nicht verarbeitet' }}</td>
+          <td :class="{ 'success': item.message === 'Erfolgreich', 'error': item.message && item.message !== 'Erfolgreich' }">
+            {{ item.message || 'Nicht verarbeitet' }}
+          </td>
         </tr>
         </tbody>
       </table>
@@ -117,17 +130,17 @@ import {reactive, ref, watch, nextTick} from 'vue';
 import * as XLSX from 'xlsx';
 import axios, {post} from "axios";
 import async from "async";
-import { store } from '../store/store.js';
+import {store} from '../store/store.js';
 import {convertExcelDateToJSDate} from '../service/utils.js';
 import {convertExcelTimeToReadableTime} from '../service/utils.js';
 import {convertDurationToUnixTimestamp} from '../service/utils.js';
 import {excelDateToUnixTime} from '../service/utils.js';
 import {getUnixTimestamp} from '../service/utils.js';
-import {fetchCustomer, fetchUsers} from '../service/api.js';
-import { fetchSalesOrders } from '../service/api.js';
-import { fetchSelectedSalesOrder } from '../service/api.js';
-import { fetchTaskAndSubject } from '../service/api.js';
-import { postTimeRecord, postAllTimeRecords } from '../service/api.js';
+import {checkTaskCompletion, fetchCustomer, fetchUsers} from '../service/api.js';
+import {fetchSalesOrders} from '../service/api.js';
+import {fetchSelectedSalesOrder} from '../service/api.js';
+import {fetchTaskAndSubject} from '../service/api.js';
+import {postTimeRecord} from '../service/api.js';
 
 
 export default {
@@ -207,6 +220,8 @@ export default {
     const fileUploaded = ref(false);
     const dataRead = ref(false);
     const apiKeyInvalid = ref(false); // Initialisierung von apiKeyInvalid
+    const taskCompletionStatus = ref(false);
+
 
     const validateApiKey = () => {
       const apiKeyPattern = /^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/;
@@ -227,14 +242,14 @@ export default {
       const reader = new FileReader();
       reader.onload = (e) => {
         const ab = e.target.result;
-        const wb = XLSX.read(ab, { type: 'array' });
+        const wb = XLSX.read(ab, {type: 'array'});
         const sheetName = wb.SheetNames[0];
         const worksheet = wb.Sheets[sheetName];
 
         const range = XLSX.utils.decode_range(worksheet['!ref']);
         range.s.r = 4;
 
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { range }).map(item => {
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, {range}).map(item => {
           if (!isNaN(item.Zeit) && !isNaN(item['Dauer in Stunden'])) {
 
             return {
@@ -255,7 +270,6 @@ export default {
       };
       reader.readAsArrayBuffer(file.value);
     };
-
 
 
     const convertData = () => {
@@ -320,6 +334,23 @@ export default {
       const selectedSalesOrderData = await fetchSelectedSalesOrder(apiKey.value, domain.value, selectedOrder.value);
       orderItems.value = selectedSalesOrderData;
       console.log('Order items data loaded successfully');
+
+      // Call checkTaskCompletion for each task in the selected order
+      if (orderItems.value.length > 0) {
+        for (const item of orderItems.value) {
+          if (item.tasks && item.tasks.length > 0) {
+            for (const task of item.tasks) {
+              // Make sure to extract the id correctly
+              const taskId = typeof task === 'object' && task.id ? task.id : task;
+              const taskCompletionResult = await checkTaskCompletionWrapper(taskId);
+              if (taskCompletionResult) {
+                item.remainingHours = taskCompletionResult.remainingHours;
+                item.plannedEffortHours = taskCompletionResult.plannedEffortHours;
+              }
+            }
+          }
+        }
+      }
     };
 
     const postAllTimeRecords = async () => {
@@ -352,11 +383,8 @@ export default {
         }
         await nextTick();
       }
-       // Stellt sicher, dass die Ansicht aktualisiert wird
+      // Stellt sicher, dass die Ansicht aktualisiert wird
     };
-
-
-
 
 
     if (Array.isArray(editedData.value)) {
@@ -365,7 +393,21 @@ export default {
       });
     }
 
-
+    const checkTaskCompletionWrapper = async (taskId) => {
+      try {
+        console.log("Test")
+        const result = await checkTaskCompletion(apiKey.value, domain.value, taskId);  // Ensure taskId is passed correctly
+        if (result) {
+          const {finishes, remainingHours, plannedEffortHours} = result;
+          taskCompletionStatus.value = finishes ? true : false;
+          console.log('Task completion status:', taskCompletionStatus.value);
+          return result;
+        }
+      } catch (error) {
+        console.error('Error checking task completion:', error);
+      }
+      return null;
+    };
 
 
     watch(selectedCustomer, async (newVal) => {
@@ -375,7 +417,7 @@ export default {
         console.log('Selected customer: ', selectedCustomer.value);
         await loadSalesOrdersData(apiKey.value, domain.value, selectedCustomer.value);
       }
-    }, { immediate: false });
+    }, {immediate: false});
 
 
     watch(selectedUser, (newVal) => {
@@ -390,10 +432,9 @@ export default {
       if (newVal) {
         selectedOrder.value = newVal;
         console.log(`Selected order ID: ${newVal}`);
-        await loadSelectedSalesOrder(apiKey,domain, newVal);
+        await loadSelectedSalesOrder(apiKey, domain, newVal);
       }
-    }, { immediate: false });
-
+    }, {immediate: false});
 
     watch(selectedOrderItem, async (newVal) => {
       if (newVal) {
@@ -401,21 +442,28 @@ export default {
         if (selectedItem && selectedItem.tasks) {
           currentTasks.value = selectedItem.tasks;
           console.log('Tasks geladen: ', currentTasks.value);
-          currentTaskAndSubject.value = []; // Zurücksetzen vor dem Hinzufügen neuer Daten
-          for (const taskId of selectedItem.tasks) {
+          currentTaskAndSubject.value = [];
+          for (const task of selectedItem.tasks) {
+            const taskId = typeof task === 'object' && task.id ? task.id : task; // Korrekte Extraktion der Task-ID
             const tasks = await fetchTaskAndSubject(apiKey.value, domain.value, taskId);
             if (tasks && tasks.length > 0) {
               const taskData = tasks[0];
-              currentTaskAndSubject.value.push({
-                taskId: taskData.id,
-                subject: taskData.subject,
-              });
+              console.log('Task data:', taskData);
+              const taskCompletionResult = await checkTaskCompletionWrapper(taskId);
+              if (taskCompletionResult) {
+                currentTaskAndSubject.value.push({
+                  taskId: taskData.id,
+                  subject: taskData.subject,
+                  remainingHours: taskCompletionResult.remainingHours,
+                  plannedEffortHours: taskCompletionResult.plannedEffortHours,
+                });
+                console.log('Tasks und Subjects geladen: ', currentTaskAndSubject.value);
+              }
             }
           }
-          console.log('Tasks und Subjects geladen: ', currentTaskAndSubject.value);
         } else {
           currentTasks.value = [];
-          currentTaskAndSubject.value = []; // Keine Tasks vorhanden, zurücksetzen der Daten
+          currentTaskAndSubject.value = [];
         }
       }
     });
@@ -424,6 +472,7 @@ export default {
       if (newVal) {
         const selectedTask = tasks.value.find(task => task.id === newVal);
         console.log(`Selected task ID: ${selectedTask}`);
+
       }
     });
 
@@ -480,6 +529,8 @@ export default {
       fileUploaded,
       dataRead,
       apiKeyInvalid,
+      taskCompletionStatus,
+      checkTaskCompletionWrapper,
       validateApiKey,
       handleFileUpload,
       confirmInput,
@@ -648,7 +699,7 @@ tbody tr:hover {
   overflow: hidden; /* Verhindert Überlauf des Inhalts */
 }
 
-.blurred{
+.blurred {
   transition: filter 0.5s ease; /* Add a transition to the filter property */
   filter: blur(3px); /* Erhöht die Unschärfe für den Text */
   user-select: none;
@@ -682,7 +733,6 @@ tbody tr:hover {
 input.invalid-input {
   margin-bottom: 10px;
 }
-
 
 
 @keyframes fadeIn {
