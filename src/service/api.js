@@ -83,7 +83,7 @@ export const fetchSalesOrders = async (apiKey, domain, selectedCustomer, retries
     };
 
     try {
-        const response = await fetch(`https://${domain}.weclapp.com/webapp/api/v1/salesOrder?customerId-eq="${selectedCustomer}"`, requestOptions);
+        const response = await fetch(`https://${domain}.weclapp.com/webapp/api/v1/salesOrder?customerId-eq=${selectedCustomer}&status-eq=ORDER_CONFIRMATION_PRINTED`, requestOptions);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const result = await response.json();
         const salesOrders = result.result.map(order => ({
@@ -141,7 +141,7 @@ export const fetchSelectedSalesOrder = async (apiKey, domain, selectedValue) => 
 };
 
 export const fetchTaskAndSubject = async (apiKey, domain, taskId, retries = 3) => {
-    const url = `https://${domain}.weclapp.com/webapp/api/v1/task?id-eq=${taskId}&properties=id,subject,parentTaskId`;
+    const url = `https://${domain}.weclapp.com/webapp/api/v1/task?id-eq=${taskId}&properties=id,subject,plannedEffort,taskStatus`;
     try {
         const response = await axios.get(url, {
             headers: {
@@ -149,8 +149,10 @@ export const fetchTaskAndSubject = async (apiKey, domain, taskId, retries = 3) =
                 "AuthenticationToken": apiKey
             }
         });
-        const tasks = response.data.result;
+        let tasks = response.data.result;
         if (tasks.length > 0) {
+            // Filtere abgeschlossene Aufgaben heraus
+            tasks = tasks.filter(task => task.taskStatus !== 'COMPLETED');
             return tasks;
         } else {
             throw new Error('Keine Aufgaben gefunden');
@@ -239,7 +241,7 @@ export const checkTaskCompletion = async (apiKey, domain, taskId) => {
         console.log('Total duration in seconds:', totalDuration);
 
         // Fetch für task
-        const taskUrl = `https://${domain}.weclapp.com/webapp/api/v1/task?id-eq=${taskId}&properties=id,subject,plannedEffort`;
+        const taskUrl = `https://${domain}.weclapp.com/webapp/api/v1/task?id-eq=${taskId}&properties=id,subject,plannedEffort,taskStatus`;
         const taskResponse = await fetch(taskUrl, requestOptions);
         if (!taskResponse.ok) throw new Error(`HTTP error! Status: ${taskResponse.status}`);
         const taskData = await taskResponse.json();
@@ -253,6 +255,7 @@ export const checkTaskCompletion = async (apiKey, domain, taskId) => {
         console.log('Remaining hours:', remainingHours);
         let plannedEffortHours = task.plannedEffort / 3600;
         console.log('Planned effort hours:', plannedEffortHours);
+        let completed = task.taskStatus === 'COMPLETED';
 
         // Ausgabe der Ergebnisse
         if (finishes) {
@@ -265,7 +268,8 @@ export const checkTaskCompletion = async (apiKey, domain, taskId) => {
         return {
             finishes,
             remainingHours,
-            plannedEffortHours
+            plannedEffortHours,
+            completed
         };
     } catch (error) {
         console.error('Error fetching data:', error);

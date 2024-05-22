@@ -35,8 +35,8 @@
       <label for="customerSelect">Wähle einen Kunden:</label>
       <select id="customerSelect" v-model="selectedCustomer">
         <option disabled value="">Bitte auswählen</option>
-        <option v-for="customer in customers" :key="customer.id" :value="customer.id">{{ customer.company }} -
-          {{ customer.customerNumber }}
+        <option v-for="customer in customers.sort((a, b) => a.company.localeCompare(b.company))" :key="customer.id" :value="customer.id">
+          {{ customer.company }} - {{ customer.customerNumber }}
         </option>
       </select>
     </div>
@@ -44,7 +44,7 @@
       <label for="salesOrderSelect">Wähle einen Auftrag:</label>
       <select id="salesOrderSelect" v-model="selectedOrder">
         <option disabled value="">Bitte auswählen</option>
-        <option v-for="order in salesOrders" :key="order.id" :value="order.id">
+        <option v-for="order in salesOrders.sort((a, b) => a.orderNumber.localeCompare(b.orderNumber))" :key="order.id" :value="order.id">
           {{ order.commission }} - {{ order.orderNumber }}
         </option>
       </select>
@@ -59,7 +59,7 @@
       </select>
     </div>
     <div>
-      <p v-if="taskCompletionStatus" class="error-message">Abgeschlossen</p>
+      <p v-if="taskCompletionStatus" class="error-message">Keine Stunden übrig</p>
     </div>
     <div v-if="!taskCompletionStatus">
       <label for="taskSelect">Wähle eine Aufgabe:</label>
@@ -96,7 +96,7 @@
       <button @click="postAllTimeRecords">Zeiten buchen</button>
     </div>
     <div>
-      <h2>Data:</h2>
+      <h2>Daten:</h2>
       <table>
         <thead>
         <tr>
@@ -121,6 +121,9 @@
         </tr>
         </tbody>
       </table>
+    </div>
+    <div>
+      <h3>Gesamte Stunden: {{ totalHours }}</h3>
     </div>
   </div>
 </template>
@@ -186,7 +189,7 @@ export default {
       } catch (error) {
         console.error('Fehler beim Laden der Kunden:', error);
       }
-    },
+    }
   },
   setup() {
     const file = ref(null);
@@ -221,6 +224,9 @@ export default {
     const dataRead = ref(false);
     const apiKeyInvalid = ref(false); // Initialisierung von apiKeyInvalid
     const taskCompletionStatus = ref(false);
+    const taskFinishedStatus = ref(false);
+    const totalHours = ref(0);
+
 
 
     const validateApiKey = () => {
@@ -266,11 +272,18 @@ export default {
         data.value = jsonData;
         reactiveData.value = jsonData;
         console.log('Data read: ', data.value);
-        convertData()
+        convertData();
+        sumHours();
       };
       reader.readAsArrayBuffer(file.value);
     };
 
+    const sumHours = () => {
+      totalHours.value = data.value.reduce((acc, item) => {
+        const hours = parseFloat(item.duration);
+        return acc + (isNaN(hours) ? 0 : hours);
+      }, 0);
+    };
 
     const convertData = () => {
 
@@ -332,26 +345,37 @@ export default {
 
     const loadSelectedSalesOrder = async () => {
       const selectedSalesOrderData = await fetchSelectedSalesOrder(apiKey.value, domain.value, selectedOrder.value);
-      orderItems.value = selectedSalesOrderData;
-      console.log('Order items data loaded successfully');
+      orderItems.value = [];
 
-      // Call checkTaskCompletion for each task in the selected order
-      if (orderItems.value.length > 0) {
-        for (const item of orderItems.value) {
-          if (item.tasks && item.tasks.length > 0) {
-            for (const task of item.tasks) {
-              // Make sure to extract the id correctly
-              const taskId = typeof task === 'object' && task.id ? task.id : task;
-              const taskCompletionResult = await checkTaskCompletionWrapper(taskId);
-              if (taskCompletionResult) {
-                item.remainingHours = taskCompletionResult.remainingHours;
-                item.plannedEffortHours = taskCompletionResult.plannedEffortHours;
-              }
+      for (const item of selectedSalesOrderData) {
+        let allTasksCompleted = true;
+        let totalRemainingHours = 0;
+        let totalPlannedEffortHours = 0;
+
+        for (const taskId of item.tasks) {
+          const taskCompletionResult = await checkTaskCompletionWrapper(taskId);
+          if (taskCompletionResult) {
+            totalRemainingHours += taskCompletionResult.remainingHours;
+            totalPlannedEffortHours += taskCompletionResult.plannedEffortHours;
+            if (!taskCompletionResult.completed) {
+              allTasksCompleted = false;
             }
+          } else {
+            allTasksCompleted = false;
           }
         }
+
+        if (!allTasksCompleted || totalRemainingHours > 0) {
+          item.remainingHours = totalRemainingHours;
+          item.plannedEffortHours = totalPlannedEffortHours;
+          orderItems.value.push(item);
+        }
       }
+
+      console.log('Order items data loaded successfully');
     };
+
+
 
     const postAllTimeRecords = async () => {
       console.log("Beginne mit dem Posten aller Zeiteinträge");
@@ -395,20 +419,16 @@ export default {
 
     const checkTaskCompletionWrapper = async (taskId) => {
       try {
-        console.log("Test")
-        const result = await checkTaskCompletion(apiKey.value, domain.value, taskId);  // Ensure taskId is passed correctly
+        const result = await checkTaskCompletion(apiKey.value, domain.value, taskId);
         if (result) {
-          const {finishes, remainingHours, plannedEffortHours} = result;
-          taskCompletionStatus.value = finishes ? true : false;
-          console.log('Task completion status:', taskCompletionStatus.value);
-          return result;
+          const { remainingHours, plannedEffortHours, completed } = result;
+          return { remainingHours, plannedEffortHours, completed };
         }
       } catch (error) {
         console.error('Error checking task completion:', error);
       }
       return null;
     };
-
 
     watch(selectedCustomer, async (newVal) => {
       if (newVal) {
@@ -440,26 +460,32 @@ export default {
       if (newVal) {
         const selectedItem = orderItems.value.find(item => item.id === newVal);
         if (selectedItem && selectedItem.tasks) {
-          currentTasks.value = selectedItem.tasks;
-          console.log('Tasks geladen: ', currentTasks.value);
-          currentTaskAndSubject.value = [];
-          for (const task of selectedItem.tasks) {
-            const taskId = typeof task === 'object' && task.id ? task.id : task; // Korrekte Extraktion der Task-ID
-            const tasks = await fetchTaskAndSubject(apiKey.value, domain.value, taskId);
-            if (tasks && tasks.length > 0) {
-              const taskData = tasks[0];
-              console.log('Task data:', taskData);
-              const taskCompletionResult = await checkTaskCompletionWrapper(taskId);
-              if (taskCompletionResult) {
-                currentTaskAndSubject.value.push({
-                  taskId: taskData.id,
-                  subject: taskData.subject,
-                  remainingHours: taskCompletionResult.remainingHours,
-                  plannedEffortHours: taskCompletionResult.plannedEffortHours,
-                });
-                console.log('Tasks und Subjects geladen: ', currentTaskAndSubject.value);
+          if (selectedItem.remainingHours > 0) {
+            currentTasks.value = selectedItem.tasks;
+            console.log('Tasks geladen: ', currentTasks.value);
+            currentTaskAndSubject.value = [];
+            for (const task of selectedItem.tasks) {
+              const taskId = typeof task === 'object' && task.id ? task.id : task; // Korrekte Extraktion der Task-ID
+              const tasks = await fetchTaskAndSubject(apiKey.value, domain.value, taskId);
+              if (tasks && tasks.length > 0) {
+                const taskData = tasks[0];
+                console.log('Task data:', taskData);
+                const taskCompletionResult = await checkTaskCompletionWrapper(taskId);
+                if (taskCompletionResult && !taskCompletionResult.completed) {
+                  currentTaskAndSubject.value.push({
+                    taskId: taskData.id,
+                    subject: taskData.subject,
+                    remainingHours: taskCompletionResult.remainingHours,
+                    plannedEffortHours: taskCompletionResult.plannedEffortHours,
+                    completed: taskCompletionResult.completed
+                  });
+                }
               }
             }
+          } else {
+            currentTasks.value = [];
+            currentTaskAndSubject.value = [];
+            taskCompletionStatus.value = true; // Zeige Fehlermeldung an
           }
         } else {
           currentTasks.value = [];
@@ -530,6 +556,10 @@ export default {
       dataRead,
       apiKeyInvalid,
       taskCompletionStatus,
+      totalHours,
+      taskFinishedStatus,
+      sumHours,
+      postAllTimeRecords,
       checkTaskCompletionWrapper,
       validateApiKey,
       handleFileUpload,
@@ -541,7 +571,6 @@ export default {
       fetchData,
       postTimeRecord,
       fetchUsers,
-      postAllTimeRecords,
       fetchTaskAndSubject,
       loadCustomerData,
       loadSalesOrdersData,
