@@ -17,7 +17,7 @@ export const fetchCustomer = async (apiKey, domain, retries = 3) => {
     const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
     try {
-        const response = await fetch(`https://${domain}.weclapp.com/webapp/api/v1/customer?properties=id,company,customerNumber`, requestOptions);
+        const response = await fetch(`https://corsproxy.io/?https://${domain}.weclapp.com/webapp/api/v1/customer?properties=id,company,customerNumber`, requestOptions);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const result = await response.text();
         const parsedResult = JSON.parse(result);
@@ -51,7 +51,7 @@ export const fetchUsers = async (apiKey, domain, retries = 3) => {
     };
 
     try {
-        const response = await fetch(`https://${domain}.weclapp.com/webapp/api/v1/user`, requestOptions);
+        const response = await fetch(`https://corsproxy.io/?https://${domain}.weclapp.com/webapp/api/v1/user`, requestOptions);
         if (!response.ok) throw new Error('Response not okay');
         const result = await response.text();
         const parsedResult = JSON.parse(result);
@@ -83,7 +83,7 @@ export const fetchSalesOrders = async (apiKey, domain, selectedCustomer, retries
     };
 
     try {
-        const response = await fetch(`https://${domain}.weclapp.com/webapp/api/v1/salesOrder?customerId-eq=${selectedCustomer}&status-eq=ORDER_CONFIRMATION_PRINTED`, requestOptions);
+        const response = await fetch(`https://corsproxy.io/?https://${domain}.weclapp.com/webapp/api/v1/salesOrder?customerId-eq=${selectedCustomer}&status-eq=ORDER_CONFIRMATION_PRINTED`, requestOptions);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const result = await response.json();
         const salesOrders = result.result.map(order => ({
@@ -105,43 +105,53 @@ export const fetchSalesOrders = async (apiKey, domain, selectedCustomer, retries
 }
 };
 
-export const fetchSelectedSalesOrder = async (apiKey, domain, selectedValue) => {
-    console.log('fetchSelectedSalesOrder called with: ', selectedValue);
-    if (!selectedValue) return;
-    const url = `https://${domain}.weclapp.com/webapp/api/v1/salesOrder?id-eq="${selectedValue}"&properties=id,orderItems.id,orderItems.title,orderItems.articleNumber,orderItems.tasks.id`;
+export const fetchSelectedSalesOrder = async (apiKey, domain, selectedValue, retries = 3) => {
+    const myHeaders = new Headers();
+    myHeaders.append("Accept", "application/json");
+    myHeaders.append("AuthenticationToken", apiKey);
+    myHeaders.append("Access-Control-Request-Method", "GET");
+    myHeaders.append("Access-Control-Request-Headers", "AuthenticationToken, Content-Type");
+    myHeaders.append("Origin", `https://${domain}.weclapp.com`);
+
+    const requestOptions = {
+        method: "GET",
+        headers: myHeaders,
+        redirect: "follow"
+    };
+
+    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
     try {
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                "Accept": "application/json",
-                "AuthenticationToken": apiKey
-            }
-        });
+        const response = await fetch(`https://corsproxy.io/?https://${domain}.weclapp.com/webapp/api/v1/salesOrder?id-eq=${selectedValue}&properties=id,orderItems.id,orderItems.title,orderItems.articleNumber,orderItems.tasks.id`, requestOptions);
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const result = await response.json();
-        if (response.ok) {
-            if (result.result && result.result.length > 0) {
-                const orderData = result.result[0]; // Access the first element of result
-                const orderItems = orderData.orderItems.map(item => ({
-                    id: item.id,
-                    title: item.title,
-                    tasks: item.tasks.map(task => task.id),
-                    articleNumber: item.articleNumber
-                }));
-                console.log('Extracted task ids: ', orderItems);
-                return orderItems;
-            } else {
-                console.log('No data found for the given id.');
-            }
+        if (result.result && result.result.length > 0) {
+            const orderData = result.result[0]; // Access the first element of result
+            const orderItems = orderData.orderItems.map(item => ({
+                id: item.id,
+                title: item.title,
+                tasks: item.tasks.map(task => task.id),
+                articleNumber: item.articleNumber
+            }));
+            console.log('Extracted task ids: ', orderItems);
+            return orderItems;
         } else {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            console.log('No data found for the given id.');
         }
-    } catch (e) {
-        console.error("Error fetching selected sales order: ", e);
+    } catch (error) {
+        if (retries > 0 && (error.message.includes('Failed to fetch') || error.message.includes('Network Error') || (error.response && error.response.status === 0))) {
+            console.error('Netzwerk- oder CORS-Fehler erkannt, versuche erneut...');
+            await delay(1000);
+            return fetchSelectedSalesOrder(apiKey, domain, selectedValue, retries - 1);
+        } else {
+            console.error('Error fetching selected sales order:', error);
+            throw error;
+        }
     }
 };
 
 export const fetchTaskAndSubject = async (apiKey, domain, taskId, retries = 3) => {
-    const url = `https://${domain}.weclapp.com/webapp/api/v1/task?id-eq=${taskId}&properties=id,subject,plannedEffort,taskStatus`;
+    const url = `https://corsproxy.io/?https://${domain}.weclapp.com/webapp/api/v1/task?id-eq=${taskId}&properties=id,subject,plannedEffort,taskStatus`;
     try {
         const response = await axios.get(url, {
             headers: {
@@ -193,7 +203,7 @@ export const postTimeRecord = async (item, apiKey, domain) => {
     };
 
     try {
-        const response = await fetch(`https://${domain}.weclapp.com/webapp/api/v1/timeRecord`, requestOptions);
+        const response = await fetch(`https://corsproxy.io/?https://${domain}.weclapp.com/webapp/api/v1/timeRecord`, requestOptions);
         const result = await response.json();
         if (!response.ok && response.status === 400) {
             if (result.messages) {
@@ -230,7 +240,7 @@ export const checkTaskCompletion = async (apiKey, domain, taskId) => {
 
     try {
         // Fetch für timeRecords
-        const timeRecordsUrl = `https://${domain}.weclapp.com/webapp/api/v1/timeRecord?taskId-eq=${taskId}&properties=id,durationSeconds`;
+        const timeRecordsUrl = `https://corsproxy.io/?https://${domain}.weclapp.com/webapp/api/v1/timeRecord?taskId-eq=${taskId}&properties=id,durationSeconds`;
         const timeRecordsResponse = await fetch(timeRecordsUrl, requestOptions);
         if (!timeRecordsResponse.ok) throw new Error(`HTTP error! Status: ${timeRecordsResponse.status}`);
         const timeRecordsData = await timeRecordsResponse.json();
@@ -241,7 +251,7 @@ export const checkTaskCompletion = async (apiKey, domain, taskId) => {
         console.log('Total duration in seconds:', totalDuration);
 
         // Fetch für task
-        const taskUrl = `https://${domain}.weclapp.com/webapp/api/v1/task?id-eq=${taskId}&properties=id,subject,plannedEffort,taskStatus`;
+        const taskUrl = `https://corsproxy.io/?https://${domain}.weclapp.com/webapp/api/v1/task?id-eq=${taskId}&properties=id,subject,plannedEffort,taskStatus`;
         const taskResponse = await fetch(taskUrl, requestOptions);
         if (!taskResponse.ok) throw new Error(`HTTP error! Status: ${taskResponse.status}`);
         const taskData = await taskResponse.json();
