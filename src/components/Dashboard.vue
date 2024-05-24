@@ -53,7 +53,7 @@
       <label for="orderItemSelect">Wähle ein Service:</label>
       <select id="orderItemSelect" v-model="selectedOrderItem">
         <option disabled value="">Bitte auswählen</option>
-        <option v-for="item in orderItems" :key="item.id" :value="item.id">{{ item.title }} - frei Stunde:
+        <option v-for="item in orderItems" :key="item.id" :value="item.id">{{ item.title }} - Offene Zeiten:
           {{ item.remainingHours }}
         </option>
       </select>

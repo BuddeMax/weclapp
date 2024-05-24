@@ -3,10 +3,16 @@ import axios from 'axios';
 export const fetchCustomer = async (apiKey, domain, retries = 3) => {
     const myHeaders = new Headers();
     myHeaders.append("Accept", "application/json");
+    myHeaders.append("Content-Type", "application/json");
     myHeaders.append("AuthenticationToken", apiKey);
+    myHeaders.append("Cookie", "sid=19");
     myHeaders.append("Access-Control-Request-Method", "GET");
     myHeaders.append("Access-Control-Request-Headers", "AuthenticationToken, Content-Type");
     myHeaders.append("Origin", `https://${domain}.weclapp.com`);
+    myHeaders.append("Access-Control-Allow-Origin", "*");
+    myHeaders.append("Access-Control-Allow-Credentials", true);
+
+
 
     const requestOptions = {
         method: "GET",
@@ -17,7 +23,7 @@ export const fetchCustomer = async (apiKey, domain, retries = 3) => {
     const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
     try {
-        const response = await fetch(`https://corsproxy.io/?https://${domain}.weclapp.com/webapp/api/v1/customer?properties=id,company,customerNumber`, requestOptions);
+        const response = await fetch(`https://my-new-worker.max-budde.workers.dev/?https://${domain}.weclapp.com/webapp/api/v1/customer?properties=id,company,customerNumber`, requestOptions);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const result = await response.text();
         const parsedResult = JSON.parse(result);
@@ -51,7 +57,7 @@ export const fetchUsers = async (apiKey, domain, retries = 3) => {
     };
 
     try {
-        const response = await fetch(`https://corsproxy.io/?https://${domain}.weclapp.com/webapp/api/v1/user`, requestOptions);
+        const response = await fetch(`https://my-new-worker.max-budde.workers.dev/?https://${domain}.weclapp.com/webapp/api/v1/user`, requestOptions);
         if (!response.ok) throw new Error('Response not okay');
         const result = await response.text();
         const parsedResult = JSON.parse(result);
@@ -83,7 +89,7 @@ export const fetchSalesOrders = async (apiKey, domain, selectedCustomer, retries
     };
 
     try {
-        const response = await fetch(`https://corsproxy.io/?https://${domain}.weclapp.com/webapp/api/v1/salesOrder?customerId-eq=${selectedCustomer}&status-eq=ORDER_CONFIRMATION_PRINTED`, requestOptions);
+        const response = await fetch(`https://my-new-worker.max-budde.workers.dev/?https://${domain}.weclapp.com/webapp/api/v1/salesOrder?customerId-eq=${selectedCustomer}&status-eq=ORDER_CONFIRMATION_PRINTED`, requestOptions);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const result = await response.json();
         const salesOrders = result.result.map(order => ({
@@ -122,7 +128,7 @@ export const fetchSelectedSalesOrder = async (apiKey, domain, selectedValue, ret
     const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
     try {
-        const response = await fetch(`https://corsproxy.io/?https://${domain}.weclapp.com/webapp/api/v1/salesOrder?id-eq=${selectedValue}&properties=id,orderItems.id,orderItems.title,orderItems.articleNumber,orderItems.tasks.id`, requestOptions);
+        const response = await fetch(`https://my-new-worker.max-budde.workers.dev/?https://${domain}.weclapp.com/webapp/api/v1/salesOrder?id-eq=${selectedValue}&properties=id,orderItems.id,orderItems.title,orderItems.articleNumber,orderItems.tasks.id`, requestOptions);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const result = await response.json();
         if (result.result && result.result.length > 0) {
@@ -151,7 +157,7 @@ export const fetchSelectedSalesOrder = async (apiKey, domain, selectedValue, ret
 };
 
 export const fetchTaskAndSubject = async (apiKey, domain, taskId, retries = 3) => {
-    const url = `https://corsproxy.io/?https://${domain}.weclapp.com/webapp/api/v1/task?id-eq=${taskId}&properties=id,subject,plannedEffort,taskStatus`;
+    const url = `https://my-new-worker.max-budde.workers.dev/?https://${domain}.weclapp.com/webapp/api/v1/task?id-eq=${taskId}&properties=id,subject,plannedEffort,taskStatus`;
     try {
         const response = await axios.get(url, {
             headers: {
@@ -203,7 +209,7 @@ export const postTimeRecord = async (item, apiKey, domain) => {
     };
 
     try {
-        const response = await fetch(`https://corsproxy.io/?https://${domain}.weclapp.com/webapp/api/v1/timeRecord`, requestOptions);
+        const response = await fetch(`https://my-new-worker.max-budde.workers.dev/?https://${domain}.weclapp.com/webapp/api/v1/timeRecord`, requestOptions);
         const result = await response.json();
         if (!response.ok && response.status === 400) {
             if (result.messages) {
@@ -240,7 +246,7 @@ export const checkTaskCompletion = async (apiKey, domain, taskId) => {
 
     try {
         // Fetch für timeRecords
-        const timeRecordsUrl = `https://corsproxy.io/?https://${domain}.weclapp.com/webapp/api/v1/timeRecord?taskId-eq=${taskId}&properties=id,durationSeconds`;
+        const timeRecordsUrl = `https://my-new-worker.max-budde.workers.dev/?https://${domain}.weclapp.com/webapp/api/v1/timeRecord?taskId-eq=${taskId}&properties=id,durationSeconds`;
         const timeRecordsResponse = await fetch(timeRecordsUrl, requestOptions);
         if (!timeRecordsResponse.ok) throw new Error(`HTTP error! Status: ${timeRecordsResponse.status}`);
         const timeRecordsData = await timeRecordsResponse.json();
@@ -251,7 +257,7 @@ export const checkTaskCompletion = async (apiKey, domain, taskId) => {
         console.log('Total duration in seconds:', totalDuration);
 
         // Fetch für task
-        const taskUrl = `https://corsproxy.io/?https://${domain}.weclapp.com/webapp/api/v1/task?id-eq=${taskId}&properties=id,subject,plannedEffort,taskStatus`;
+        const taskUrl = `https://my-new-worker.max-budde.workers.dev/?https://${domain}.weclapp.com/webapp/api/v1/task?id-eq=${taskId}&properties=id,subject,plannedEffort,taskStatus`;
         const taskResponse = await fetch(taskUrl, requestOptions);
         if (!taskResponse.ok) throw new Error(`HTTP error! Status: ${taskResponse.status}`);
         const taskData = await taskResponse.json();
