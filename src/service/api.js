@@ -137,7 +137,8 @@ export const fetchSelectedSalesOrder = async (apiKey, domain, selectedValue, ret
                 id: item.id,
                 title: item.title,
                 tasks: item.tasks.map(task => task.id),
-                articleNumber: item.articleNumber
+                articleNumber: item.articleNumber,
+                taskStatus: item.taskStatus
             }));
             console.log('Extracted task ids: ', orderItems);
             return orderItems;

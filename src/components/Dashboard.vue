@@ -35,8 +35,8 @@
       <label for="customerSelect">Wähle einen Kunden:</label>
       <select id="customerSelect" v-model="selectedCustomer">
         <option disabled value="">Bitte auswählen</option>
-        <option v-for="customer in customers.sort((a, b) => a.company.localeCompare(b.company))" :key="customer.id" :value="customer.id">
-          {{ customer.company }} - {{ customer.customerNumber }}
+        <option v-for="customer in customers.sort((a, b) => Number(a.customerNumber) - Number(b.customerNumber))" :key="customer.id" :value="customer.id">
+          {{ customer.customerNumber }} - {{ customer.company }}
         </option>
       </select>
     </div>
@@ -45,7 +45,7 @@
       <select id="salesOrderSelect" v-model="selectedOrder">
         <option disabled value="">Bitte auswählen</option>
         <option v-for="order in salesOrders.sort((a, b) => a.orderNumber.localeCompare(b.orderNumber))" :key="order.id" :value="order.id">
-          {{ order.commission }} - {{ order.orderNumber }}
+           {{ order.orderNumber }} - {{ order.commission }}
         </option>
       </select>
     </div>
@@ -54,12 +54,12 @@
       <select id="orderItemSelect" v-model="selectedOrderItem">
         <option disabled value="">Bitte auswählen</option>
         <option v-for="item in orderItems" :key="item.id" :value="item.id">{{ item.title }} - Offene Zeiten:
-          {{ item.remainingHours }}
+          {{ item.remainingHours }} ({{item.taskStatus}})
         </option>
       </select>
     </div>
     <div>
-      <p v-if="taskCompletionStatus" class="error-message">Keine Stunden übrig</p>
+      <p v-if="taskCompletionStatus" class="error-message">Keine Stunden übrig oder abgeschlossen</p>
     </div>
     <div v-if="!taskCompletionStatus">
       <label for="taskSelect">Wähle eine Aufgabe:</label>
@@ -368,6 +368,7 @@ export default {
         if (!allTasksCompleted || totalRemainingHours > 0) {
           item.remainingHours = totalRemainingHours;
           item.plannedEffortHours = totalPlannedEffortHours;
+          item.taskStatus = allTasksCompleted ? 'COMPLETED' : 'IN_PROGRESS'; // Hinzufügen des taskStatus
           orderItems.value.push(item);
         }
       }
@@ -379,6 +380,15 @@ export default {
 
     const postAllTimeRecords = async () => {
       console.log("Beginne mit dem Posten aller Zeiteinträge");
+
+      // Recheck remaining hours before posting
+      await recheckRemainingHours();
+
+      if (taskCompletionStatus.value) {
+        console.error('No remaining hours to post time records.');
+        return;
+      }
+
       for (let i = 0; i < data.value.length; i++) {
         const item = data.value[i];
         try {
@@ -409,6 +419,7 @@ export default {
       }
       // Stellt sicher, dass die Ansicht aktualisiert wird
     };
+
 
 
     if (Array.isArray(editedData.value)) {
@@ -460,32 +471,35 @@ export default {
       if (newVal) {
         const selectedItem = orderItems.value.find(item => item.id === newVal);
         if (selectedItem && selectedItem.tasks) {
-          if (selectedItem.remainingHours > 0) {
-            currentTasks.value = selectedItem.tasks;
-            console.log('Tasks geladen: ', currentTasks.value);
-            currentTaskAndSubject.value = [];
-            for (const task of selectedItem.tasks) {
-              const taskId = typeof task === 'object' && task.id ? task.id : task; // Korrekte Extraktion der Task-ID
-              const tasks = await fetchTaskAndSubject(apiKey.value, domain.value, taskId);
-              if (tasks && tasks.length > 0) {
-                const taskData = tasks[0];
-                console.log('Task data:', taskData);
-                const taskCompletionResult = await checkTaskCompletionWrapper(taskId);
-                if (taskCompletionResult && !taskCompletionResult.completed) {
-                  currentTaskAndSubject.value.push({
-                    taskId: taskData.id,
-                    subject: taskData.subject,
-                    remainingHours: taskCompletionResult.remainingHours,
-                    plannedEffortHours: taskCompletionResult.plannedEffortHours,
-                    completed: taskCompletionResult.completed
-                  });
-                }
+          currentTasks.value = selectedItem.tasks;
+          console.log('Tasks geladen: ', currentTasks.value);
+          currentTaskAndSubject.value = [];
+          let totalRemainingHours = 0; // Track total remaining hours for the selected order item
+
+          for (const task of selectedItem.tasks) {
+            const taskId = typeof task === 'object' && task.id ? task.id : task; // Korrekte Extraktion der Task-ID
+            const tasks = await fetchTaskAndSubject(apiKey.value, domain.value, taskId);
+            if (tasks && tasks.length > 0) {
+              const taskData = tasks[0];
+              console.log('Task data:', taskData);
+              const taskCompletionResult = await checkTaskCompletionWrapper(taskId);
+              if (taskCompletionResult && !taskCompletionResult.completed) {
+                totalRemainingHours += taskCompletionResult.remainingHours; // Update total remaining hours
+                currentTaskAndSubject.value.push({
+                  taskId: taskData.id,
+                  subject: taskData.subject,
+                  remainingHours: taskCompletionResult.remainingHours,
+                  plannedEffortHours: taskCompletionResult.plannedEffortHours,
+                  completed: taskCompletionResult.completed
+                });
               }
             }
+          }
+
+          if (totalRemainingHours > 0) {
+            taskCompletionStatus.value = false; // Enough hours left
           } else {
-            currentTasks.value = [];
-            currentTaskAndSubject.value = [];
-            taskCompletionStatus.value = true; // Zeige Fehlermeldung an
+            taskCompletionStatus.value = true; // No hours left, show error message
           }
         } else {
           currentTasks.value = [];
@@ -493,6 +507,23 @@ export default {
         }
       }
     });
+
+    const recheckRemainingHours = async () => {
+      if (selectedOrderItem.value) {
+        const selectedItem = orderItems.value.find(item => item.id === selectedOrderItem.value);
+        if (selectedItem && selectedItem.tasks) {
+          let totalRemainingHours = 0;
+          for (const task of selectedItem.tasks) {
+            const taskId = typeof task === 'object' && task.id ? task.id : task;
+            const taskCompletionResult = await checkTaskCompletionWrapper(taskId);
+            if (taskCompletionResult && !taskCompletionResult.completed) {
+              totalRemainingHours += taskCompletionResult.remainingHours;
+            }
+          }
+          taskCompletionStatus.value = totalRemainingHours <= 0; // Update completion status based on remaining hours
+        }
+      }
+    };
 
     watch(selectedTask, (newVal) => {
       if (newVal) {
