@@ -280,10 +280,18 @@ export default {
 
     const sumHours = () => {
       totalHours.value = data.value.reduce((acc, item) => {
-        const hours = parseFloat(item.duration);
-        return acc + (isNaN(hours) ? 0 : hours);
+        const [hours, minutes, seconds] = item.duration.split(':').map(Number);
+        const totalMinutes = (hours * 60) + minutes + (seconds / 60);
+        return acc + totalMinutes;
       }, 0);
+
+      const totalHoursFloat = totalHours.value / 60;
+      const totalHoursInt = Math.floor(totalHoursFloat);
+      const remainingMinutes = Math.round((totalHoursFloat - totalHoursInt) * 60);
+
+      totalHours.value = `${totalHoursInt}:${remainingMinutes < 10 ? '0' : ''}${remainingMinutes} Stunden`;
     };
+
 
     const convertData = () => {
 
