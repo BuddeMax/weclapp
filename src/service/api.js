@@ -74,6 +74,23 @@ export const fetchUsers = async (apiKey, domain, retries = 3) => {
     }
 };
 
+export const fetchProjectUsers = async (apiKey, domain, userId) => {
+    const url = `https://my-new-worker.max-budde.workers.dev/?https://${domain}.weclapp.com/webapp/api/v1/user?id-eq=${userId}`;
+    try {
+        const response = await axios.get(url, {
+            headers: {
+                "Accept": "application/json",
+                "AuthenticationToken": apiKey
+            }
+        });
+        return response.data.result[0];
+    } catch (error) {
+        console.error('Fehler beim Abrufen der Projektnutzer:', error);
+        return null;
+    }
+};
+
+
 export const fetchSalesOrders = async (apiKey, domain, selectedCustomer, retries = 3) => {
     const myHeaders = new Headers();
     myHeaders.append("Accept", "application/json");
@@ -92,24 +109,29 @@ export const fetchSalesOrders = async (apiKey, domain, selectedCustomer, retries
         const response = await fetch(`https://my-new-worker.max-budde.workers.dev/?https://${domain}.weclapp.com/webapp/api/v1/salesOrder?customerId-eq=${selectedCustomer}&status-eq=ORDER_CONFIRMATION_PRINTED`, requestOptions);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const result = await response.json();
+
         const salesOrders = result.result.map(order => ({
             id: order.id,
             commission: order.commission,
             orderNumber: order.orderNumber,
+            projectModeActive: order.projectModeActive,
+            projectMembers: order.projectMembers.map(member => member.userId)
         }));
+
         console.log('Verkaufsaufträge erfolgreich geladen');
         return salesOrders;
-    }  catch (error) {
-    if (retries > 0 && (error.message.includes('Failed to fetch') || error.message.includes('Network Error') || (error.response && error.response.status === 0))) {
-        console.error('Netzwerk- oder CORS-Fehler erkannt, versuche erneut...');
-        await (async () => {
-            fetchSalesOrders(apiKey, domain, selectedCustomer, retries - 1);
-        })();
-    } else {
-        console.error('Fehler beim Abrufen der Verkaufsaufträge:', error);
+    } catch (error) {
+        if (retries > 0 && (error.message.includes('Failed to fetch') || error.message.includes('Network Error') || (error.response && error.response.status === 0))) {
+            console.error('Netzwerk- oder CORS-Fehler erkannt, versuche erneut...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            return fetchSalesOrders(apiKey, domain, selectedCustomer, retries - 1);
+        } else {
+            console.error('Fehler beim Abrufen der Verkaufsaufträge:', error);
+        }
     }
-}
 };
+
+
 
 export const fetchSelectedSalesOrder = async (apiKey, domain, selectedValue, retries = 3) => {
     const myHeaders = new Headers();
@@ -128,11 +150,11 @@ export const fetchSelectedSalesOrder = async (apiKey, domain, selectedValue, ret
     const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
     try {
-        const response = await fetch(`https://my-new-worker.max-budde.workers.dev/?https://${domain}.weclapp.com/webapp/api/v1/salesOrder?id-eq=${selectedValue}&properties=id,orderItems.id,orderItems.title,orderItems.articleNumber,orderItems.tasks.id`, requestOptions);
+        const response = await fetch(`https://my-new-worker.max-budde.workers.dev/?https://${domain}.weclapp.com/webapp/api/v1/salesOrder?id-eq=${selectedValue}&properties=id,orderItems.id,orderItems.title,orderItems.articleNumber,orderItems.tasks.id,projectModeActive,projectMembers.userId`, requestOptions);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const result = await response.json();
         if (result.result && result.result.length > 0) {
-            const orderData = result.result[0]; // Access the first element of result
+            const orderData = result.result[0];
             const orderItems = orderData.orderItems.map(item => ({
                 id: item.id,
                 title: item.title,
@@ -141,7 +163,11 @@ export const fetchSelectedSalesOrder = async (apiKey, domain, selectedValue, ret
                 taskStatus: item.taskStatus
             }));
             console.log('Extracted task ids: ', orderItems);
-            return orderItems;
+            return {
+                orderItems,
+                projectModeActive: orderData.projectModeActive,
+                projectMembers: orderData.projectMembers
+            };
         } else {
             console.log('No data found for the given id.');
         }
@@ -156,6 +182,7 @@ export const fetchSelectedSalesOrder = async (apiKey, domain, selectedValue, ret
         }
     }
 };
+
 
 export const fetchTaskAndSubject = async (apiKey, domain, taskId, retries = 3) => {
     const url = `https://my-new-worker.max-budde.workers.dev/?https://${domain}.weclapp.com/webapp/api/v1/task?id-eq=${taskId}&properties=id,subject,plannedEffort,taskStatus`;

@@ -74,8 +74,8 @@
       <label for="userSelect">Wähle einen User:</label>
       <select id="userSelect" v-model="selectedUser">
         <option disabled value="">Bitte auswählen</option>
-        <option v-for="user in users" :key="user.id" :value="user.id">{{ user.firstName }} {{ user.lastName }}
-          ({{ user.email }})
+        <option v-for="user in users" :key="user?.id" :value="user?.id">
+          {{ user?.firstName }} {{ user?.lastName }} ({{ user?.email }})
         </option>
       </select>
     </div>
@@ -144,6 +144,7 @@ import {fetchSalesOrders} from '../service/api.js';
 import {fetchSelectedSalesOrder} from '../service/api.js';
 import {fetchTaskAndSubject} from '../service/api.js';
 import {postTimeRecord} from '../service/api.js';
+import {fetchProjectUsers} from '../service/api.js';
 
 
 export default {
@@ -315,7 +316,6 @@ export default {
     };
 
     const fetchData = async () => {
-      loadUsers(),
           loadCustomerData()
     };
 
@@ -353,9 +353,17 @@ export default {
 
     const loadSelectedSalesOrder = async () => {
       const selectedSalesOrderData = await fetchSelectedSalesOrder(apiKey.value, domain.value, selectedOrder.value);
+      if (!selectedSalesOrderData) {
+        console.error('selectedSalesOrderData is null or undefined');
+        return;
+      }
+      if (!Array.isArray(selectedSalesOrderData.orderItems)) {
+        console.error('Expected selectedSalesOrderData.orderItems to be an array');
+        return;
+      }
       orderItems.value = [];
 
-      for (const item of selectedSalesOrderData) {
+      for (const item of selectedSalesOrderData.orderItems) {
         let allTasksCompleted = true;
         let totalRemainingHours = 0;
         let totalPlannedEffortHours = 0;
@@ -376,13 +384,14 @@ export default {
         if (!allTasksCompleted || totalRemainingHours > 0) {
           item.remainingHours = totalRemainingHours;
           item.plannedEffortHours = totalPlannedEffortHours;
-          item.taskStatus = allTasksCompleted ? 'COMPLETED' : 'IN_PROGRESS'; // Hinzufügen des taskStatus
+          item.taskStatus = allTasksCompleted ? 'COMPLETED' : 'IN_PROGRESS';
           orderItems.value.push(item);
         }
       }
 
       console.log('Order items data loaded successfully');
     };
+
 
 
 
@@ -471,9 +480,21 @@ export default {
       if (newVal) {
         selectedOrder.value = newVal;
         console.log(`Selected order ID: ${newVal}`);
-        await loadSelectedSalesOrder(apiKey, domain, newVal);
+        const selectedSalesOrderData = await fetchSelectedSalesOrder(apiKey.value, domain.value, newVal);
+        if (selectedSalesOrderData?.projectModeActive && selectedSalesOrderData.projectMembers.length > 0) {
+          const projectMembers = selectedSalesOrderData.projectMembers;
+          users.value = await Promise.all(projectMembers.map(async (member) => {
+            return fetchProjectUsers(apiKey.value, domain.value, member.userId);
+          }));
+        } else {
+          await loadUsers();
+        }
+        await loadSelectedSalesOrder();
       }
     }, {immediate: false});
+
+
+
 
     watch(selectedOrderItem, async (newVal) => {
       if (newVal) {
@@ -613,7 +634,8 @@ export default {
       fetchTaskAndSubject,
       loadCustomerData,
       loadSalesOrdersData,
-      loadSelectedSalesOrder
+      loadSelectedSalesOrder,
+      fetchProjectUsers
     };
   }
 }
